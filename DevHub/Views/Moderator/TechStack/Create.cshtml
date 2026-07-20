@@ -1,0 +1,67 @@
+@{
+    Layout = "_ModeratorLayout";
+    ViewData["Title"] = "Thêm/Sửa Công nghệ (Tech Stack)";
+}
+
+<div class="mb-8">
+    <a href="/ModeratorTechStack" class="inline-flex items-center text-muted hover:text-primary mb-4 transition-colors">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Quay lại danh sách
+    </a>
+    <h1 class="text-[32px] font-bold text-dark mb-2">Tạo / Chỉnh sửa Công nghệ</h1>
+    <p class="text-muted">Định nghĩa danh mục Tech Stack để ứng viên và NTD có thể chọn làm kỹ năng.</p>
+</div>
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center shadow-sm">
+        <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>@ViewBag.ErrorMessage</span>
+    </div>
+}
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center shadow-sm">
+        <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>@ViewBag.ErrorMessage</span>
+    </div>
+}
+
+<form method="post" action="/ModeratorTechStack/Create" class="max-w-3xl">
+    
+    <div class="bg-white rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-8 border border-[#D6DDEB]">
+        
+        <div class="mb-6">
+            <label class="block text-dark font-bold mb-2">Tên Công nghệ (Tech Name) <span class="text-red-500">*</span></label>
+            <input type="text" name="techName" placeholder="Ví dụ: ReactJS, Angular, Python..." class="w-full border border-[#D6DDEB] rounded-lg px-4 py-3 focus:outline-none focus:border-primary text-dark font-medium text-lg" required>
+            <p class="text-xs text-muted mt-2">Tên công nghệ phải là duy nhất (UNIQUE) trên hệ thống.</p>
+        </div>
+        
+        <div class="mb-6">
+            <label class="block text-dark font-bold mb-2">Phân loại (Category)</label>
+            <input type="text" name="category" placeholder="Ví dụ: Frontend, Backend, Database..." class="w-full border border-[#D6DDEB] rounded-lg px-4 py-3 focus:outline-none focus:border-primary text-dark font-medium text-lg">
+        </div>
+
+        <div class="mb-8">
+            <label class="flex items-center gap-3 cursor-pointer p-4 border border-gray-100 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                <input type="checkbox" name="isActive" value="true" checked class="w-5 h-5 text-primary rounded focus:ring-primary">
+                <div>
+                    <span class="font-bold text-dark block">Kích hoạt (Is Active)</span>
+                    <span class="text-xs text-muted">Hiển thị công nghệ này trên các form tìm kiếm và form đăng tin.</span>
+                </div>
+            </label>
+        </div>
+
+        <div class="flex gap-4 pt-4 border-t border-[#D6DDEB]">
+            <button type="submit" class="bg-primary text-white font-bold px-8 py-3 rounded-lg hover:bg-opacity-90 transition-all shadow-sm">
+                Lưu Công nghệ
+            </button>
+            <a href="/ModeratorTechStack" class="bg-white text-dark font-bold px-8 py-3 rounded-lg border border-[#D6DDEB] hover:bg-gray-50 transition-all">
+                Hủy Bỏ
+            </a>
+        </div>
+
+    </div>
+
+</form>
+

@@ -1,0 +1,314 @@
+@model List<DevHub.ViewModels.Moderator.CompanyVerificationRequestViewModel>
+@{
+    ViewData["Title"] = "Duyệt Công Ty";
+    Layout = "~/Views/Shared/_ModeratorLayout.cshtml";
+    
+    var sortOrder = ViewBag.SortOrder as string ?? "desc";
+}
+
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-[32px] font-bold text-dark mb-2">Duyệt yêu cầu xác minh công ty</h1>
+        <p class="text-muted">Quản lý và xét duyệt các yêu cầu xác minh từ nhà tuyển dụng.</p>
+    </div>
+</div>
+
+<!-- Form Filter/Search (Không dùng JavaScript) -->
+<form method="get" action="/moderator/company-approvals" class="mb-6 bg-white p-4 rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-[#D6DDEB]">
+    <div class="flex flex-col md:flex-row gap-4 mb-4">
+        <!-- Lọc theo tên công ty -->
+        <div class="flex flex-1 gap-2 items-center">
+            <input type="text" name="companyName" value="@ViewBag.CompanyName" placeholder="Tìm kiếm theo tên công ty..." class="flex-1 px-4 py-2 border border-[#D6DDEB] rounded-lg focus:outline-none focus:border-blue-500 text-sm" />
+            <button type="submit" name="sortOrder" value="@sortOrder" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                Tìm kiếm
+            </button>
+        </div>
+        
+        <!-- Lọc theo ngày -->
+        <div class="flex items-center gap-2">
+            <span class="text-sm text-muted whitespace-nowrap">Từ ngày:</span>
+            <input type="date" name="dateFrom" value="@ViewBag.DateFrom" class="px-3 py-2 border border-[#D6DDEB] rounded-lg focus:outline-none focus:border-blue-500 text-sm" />
+            
+            <span class="text-sm text-muted whitespace-nowrap">Đến ngày:</span>
+            <input type="date" name="dateTo" value="@ViewBag.DateTo" class="px-3 py-2 border border-[#D6DDEB] rounded-lg focus:outline-none focus:border-blue-500 text-sm" />
+            
+            <button type="submit" name="sortOrder" value="@sortOrder" class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+                Lọc
+            </button>
+        </div>
+    </div>
+    
+    <!-- Sort theo ngày -->
+    <div class="flex items-center gap-3 border-t border-[#D6DDEB] pt-4 mt-2">
+        <span class="text-sm text-muted">Sắp xếp theo ngày:</span>
+        <button type="submit" name="sortOrder" value="desc" class="px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors @(sortOrder != "asc" ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-[#D6DDEB] text-dark hover:bg-gray-50")">
+            Mới nhất
+        </button>
+        <button type="submit" name="sortOrder" value="asc" class="px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors @(sortOrder == "asc" ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-[#D6DDEB] text-dark hover:bg-gray-50")">
+            Cũ nhất
+        </button>
+    </div>
+</form>
+
+<div class="bg-white rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[#D6DDEB] overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50 border-b border-[#D6DDEB]">
+                    <th class="py-4 px-6 text-dark font-bold text-sm">ID Yêu Cầu</th>
+                    <th class="py-4 px-6 text-dark font-bold text-sm">Công ty</th>
+                    <th class="py-4 px-6 text-dark font-bold text-sm">Mã số thuế</th>
+                    <th class="py-4 px-6 text-dark font-bold text-sm">Ngày yêu cầu</th>
+                    <th class="py-4 px-6 text-dark font-bold text-sm">Trạng thái</th>
+                    <th class="py-4 px-6 text-dark font-bold text-sm text-center">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm" id="tableBody">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var req in Model)
+                    {
+                        <tr class="border-b border-[#D6DDEB] hover:bg-gray-50 transition-colors request-row">
+                            <td class="py-4 px-6 text-muted font-medium">#@req.LogId</td>
+                            <td class="py-4 px-6 font-bold text-dark">@req.CompanyName</td>
+                            <td class="py-4 px-6 text-muted">@req.TaxCode</td>
+                            <td class="py-4 px-6 text-muted">@(req.RequestedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
+                            <td class="py-4 px-6">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    Pending
+                                </span>
+                            </td>
+                            <td class="py-4 px-6 text-center space-x-2 flex justify-center items-center">
+                                <a href="/moderator/company-approvals/details/@req.LogId" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors" title="Chi tiết công ty">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </a>
+                                <button onclick="approveCompany(@req.LogId)" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 hover:bg-green-200 transition-colors" title="Duyệt">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                </button>
+                                <button onclick="openRejectModal(@req.LogId)" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Từ chối">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr id="emptyRow">
+                        <td colspan="6" class="py-8 px-6 text-center text-muted">
+                            Không tìm thấy yêu cầu xác minh nào.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination (JavaScript) -->
+    <div class="p-4 border-t border-[#D6DDEB] flex items-center justify-between bg-gray-50">
+        <div class="text-sm text-muted" id="paginationInfo">
+            Hiển thị 0–0 trong tổng số 0 yêu cầu
+        </div>
+        <div class="flex space-x-1" id="paginationControls">
+            <!-- Nút phân trang render bằng JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="fixed inset-0 z-[200] hidden bg-black bg-opacity-50 flex items-center justify-center px-4">
+    <div class="bg-white rounded-[20px] shadow-2xl w-full max-w-lg p-6 relative">
+        <button onclick="closeRejectModal()" class="absolute top-4 right-4 text-gray-400 hover:text-dark">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        
+        <h3 class="text-2xl font-bold text-dark mb-2">Từ chối yêu cầu xác minh</h3>
+        <p class="text-muted text-sm mb-6">Vui lòng cung cấp lý do từ chối yêu cầu <span id="rejectLogId" class="font-bold"></span>.</p>
+        
+        <div class="mb-6">
+            <label class="block text-dark font-medium mb-2">Lý do từ chối <span class="text-red-500">*</span></label>
+            <textarea id="rejectReason" rows="4" class="w-full border border-[#D6DDEB] rounded-lg p-3 focus:outline-none focus:border-primary text-dark placeholder-gray-400" placeholder="Nhập lý do cụ thể..."></textarea>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+            <button onclick="closeRejectModal()" class="px-5 py-2.5 rounded-lg border border-[#D6DDEB] text-dark font-medium hover:bg-gray-50 transition-colors">Hủy bỏ</button>
+            <button onclick="submitReject()" class="px-5 py-2.5 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition-colors shadow-sm">Xác nhận Từ chối</button>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="fixed inset-0 z-[200] hidden bg-black bg-opacity-50 flex items-center justify-center px-4">
+    <div class="bg-white rounded-[20px] shadow-2xl w-full max-w-md p-6 relative">
+        <button onclick="closeApproveModal()" class="absolute top-4 right-4 text-gray-400 hover:text-dark">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h3 class="text-2xl font-bold text-dark mb-2">Xác nhận phê duyệt</h3>
+            <p class="text-muted text-sm">Bạn có chắc chắn muốn xác minh công ty <span id="approveLogId" class="font-bold text-dark"></span>? Hồ sơ của công ty này sẽ được hiển thị công khai trên hệ thống và người đại diện có thể bắt đầu đăng tin tuyển dụng.</p>
+        </div>
+        
+        <div class="flex justify-center space-x-3">
+            <button onclick="closeApproveModal()" class="px-5 py-2.5 rounded-lg border border-[#D6DDEB] text-dark font-medium hover:bg-gray-50 transition-colors w-1/2">Hủy bỏ</button>
+            <button onclick="submitApprove()" class="px-5 py-2.5 rounded-lg bg-[#4640DE] text-white font-bold hover:bg-[#342eb3] transition-colors shadow-sm w-1/2">Xác nhận</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Pagination logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const rows = document.querySelectorAll('.request-row');
+            const totalItems = rows.length;
+            const itemsPerPage = 10;
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            let currentPage = 1;
+
+            function renderPage(page) {
+                currentPage = page;
+                if (currentPage < 1) currentPage = 1;
+                if (currentPage > totalPages) currentPage = totalPages;
+
+                const start = (currentPage - 1) * itemsPerPage;
+                const end = Math.min(start + itemsPerPage, totalItems);
+
+                rows.forEach((row, index) => {
+                    if (index >= start && index < end) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                const info = document.getElementById('paginationInfo');
+                if (totalItems === 0) {
+                    info.innerText = 'Không có yêu cầu nào';
+                } else {
+                    info.innerText = `Hiển thị ${start + 1}–${end} trong tổng số ${totalItems} yêu cầu`;
+                }
+
+                renderControls();
+            }
+
+            function renderControls() {
+                const controls = document.getElementById('paginationControls');
+                controls.innerHTML = '';
+                
+                if (totalPages > 1) {
+                    const btnClass = "px-3 py-1 rounded text-sm font-medium transition-colors border";
+                    const activeClass = "bg-blue-600 text-white border-blue-600";
+                    const inactiveClass = "text-dark bg-white border-[#D6DDEB] hover:bg-gray-50";
+                    const disabledClass = "text-gray-400 bg-gray-50 border-[#D6DDEB] cursor-not-allowed";
+
+                    // Prev
+                    const prevBtn = document.createElement('button');
+                    prevBtn.innerText = 'Trang trước';
+                    prevBtn.className = `${btnClass} ${currentPage === 1 ? disabledClass : inactiveClass}`;
+                    if (currentPage > 1) prevBtn.onclick = () => renderPage(currentPage - 1);
+                    controls.appendChild(prevBtn);
+
+                    // Pages
+                    for (let i = 1; i <= totalPages; i++) {
+                        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                            const btn = document.createElement('button');
+                            btn.innerText = i;
+                            btn.className = `${btnClass} ${i === currentPage ? activeClass : inactiveClass}`;
+                            if (i !== currentPage) btn.onclick = () => renderPage(i);
+                            controls.appendChild(btn);
+                        } else if (i === currentPage - 2 || i === currentPage + 2) {
+                            const span = document.createElement('span');
+                            span.innerText = '...';
+                            span.className = "px-2 py-1 text-muted";
+                            controls.appendChild(span);
+                        }
+                    }
+
+                    // Next
+                    const nextBtn = document.createElement('button');
+                    nextBtn.innerText = 'Trang sau';
+                    nextBtn.className = `${btnClass} ${currentPage === totalPages ? disabledClass : inactiveClass}`;
+                    if (currentPage < totalPages) nextBtn.onclick = () => renderPage(currentPage + 1);
+                    controls.appendChild(nextBtn);
+                }
+            }
+
+            // init
+            renderPage(1);
+        });
+
+        // Modal Action Logic
+        let currentRejectId = null;
+        let currentApproveId = null;
+
+        function approveCompany(id) {
+            currentApproveId = id;
+            document.getElementById('approveLogId').innerText = `#${id}`;
+            document.getElementById('approveModal').classList.remove('hidden');
+        }
+
+        function closeApproveModal() {
+            document.getElementById('approveModal').classList.add('hidden');
+            currentApproveId = null;
+        }
+
+        async function submitApprove() {
+            if (!currentApproveId) return;
+            try {
+                const response = await fetch(`/moderator/company-approvals/approve/${currentApproveId}`, { method: 'POST' });
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert("Có lỗi xảy ra khi duyệt yêu cầu này.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Có lỗi hệ thống.");
+            }
+        }
+
+        function openRejectModal(id) {
+            currentRejectId = id;
+            document.getElementById('rejectLogId').innerText = `#${id}`;
+            document.getElementById('rejectReason').value = '';
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+            currentRejectId = null;
+        }
+
+        async function submitReject() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason) {
+                alert('Vui lòng nhập lý do từ chối.');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('reason', reason);
+                const response = await fetch(`/moderator/company-approvals/reject/${currentRejectId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    alert(`Đã từ chối yêu cầu #${currentRejectId} thành công.`);
+                    closeRejectModal();
+                    window.location.reload();
+                } else {
+                    alert("Có lỗi xảy ra khi từ chối yêu cầu này.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Có lỗi hệ thống.");
+            }
+        }
+    </script>
+}

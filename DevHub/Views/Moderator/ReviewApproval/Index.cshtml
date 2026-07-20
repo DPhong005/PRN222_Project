@@ -1,0 +1,130 @@
+@model DevHub.ViewModels.Moderator.ReviewModerationViewModel
+@{
+    ViewData["Title"] = "Kiểm duyệt đánh giá công ty";
+    Layout = "~/Views/Shared/_ModeratorLayout.cshtml";
+}
+
+<div class="p-6 space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Quản lý đánh giá công ty</h1>
+            <p class="text-sm text-gray-500 mt-1">Xem xét và duyệt các đánh giá từ ứng viên.</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <form method="get" class="flex flex-col sm:flex-row gap-4 items-end">
+            <div class="w-full sm:w-64">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Trạng thái</label>
+                <select name="statusFilter" class="w-full text-sm border-gray-200 rounded-lg focus:ring-primary focus:border-primary">
+                    <option value="" selected="@(string.IsNullOrEmpty(Model.StatusFilter))">Tất cả</option>
+                    <option value="PENDING" selected="@(Model.StatusFilter == "PENDING")">Chờ duyệt</option>
+                    <option value="APPROVED" selected="@(Model.StatusFilter == "APPROVED")">Đã duyệt</option>
+                    <option value="REJECTED" selected="@(Model.StatusFilter == "REJECTED")">Đã từ chối</option>
+                </select>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button type="submit" class="bg-primary text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition-colors shadow-sm">
+                    Lọc kết quả
+                </button>
+                @if (!string.IsNullOrEmpty(Model.StatusFilter))
+                {
+                    <a href="/moderator/reviews" class="text-gray-500 hover:text-gray-700 text-sm font-medium underline">
+                        Xóa lọc
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ứng viên / Công ty</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đánh giá</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày gửi</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @if (Model.Reviews != null && Model.Reviews.Any())
+                    {
+                        @foreach (var review in Model.Reviews)
+                        {
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="text-sm font-medium text-gray-900">@review.Candidate?.FullName</div>
+                                    <div class="text-sm text-gray-500">→ @review.Company?.CompanyName</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-1 mb-1 text-sm">
+                                        <span class="font-bold text-gray-700">@review.Rating</span>
+                                        <span class="text-yellow-400">★</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 line-clamp-2 max-w-xs" title="@review.Pros">
+                                        <span class="font-medium">Ưu:</span> @review.Pros
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @(review.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @switch (review.Status)
+                                    {
+                                        case "PENDING":
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                Chờ duyệt
+                                            </span>
+                                            break;
+                                        case "APPROVED":
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Đã duyệt
+                                            </span>
+                                            break;
+                                        case "REJECTED":
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                Từ chối
+                                            </span>
+                                            break;
+                                        default:
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                @review.Status
+                                            </span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="/moderator/reviews/@review.ReviewId" class="text-primary hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors">
+                                        Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                                Không tìm thấy đánh giá nào phù hợp.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Footer -->
+        @if (Model.TotalCount > 0)
+        {
+            <div class="bg-white px-6 py-4 rounded-b-xl border-t border-gray-200">
+                @await Html.PartialAsync("_PaginationUI", new { Page = Model.Page, TotalPages = Model.TotalPages, TotalCount = Model.TotalCount, ItemName = "đánh giá" })
+            </div>
+        }
+    </div>
+</div>

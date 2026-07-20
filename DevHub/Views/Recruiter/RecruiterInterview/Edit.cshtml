@@ -1,0 +1,187 @@
+@model DevHub.Models.Interview
+@{
+    Layout = "_RecruiterLayout";
+    ViewData["Title"] = "Chỉnh sửa lịch phỏng vấn";
+    ViewData["ActiveMenu"] = "Interviews";
+}
+
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex items-center gap-4">
+        <a href="/Recruiter/RecruiterInterview" class="p-2 bg-gray-50 text-gray-500 hover:text-dark hover:bg-gray-100 rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-dark">Chỉnh sửa lịch phỏng vấn</h1>
+            <p class="text-muted text-sm mt-1">Cập nhật thời gian/địa điểm và tự động gửi email thông báo</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-[#F6F5FD] shadow-sm p-6 md:p-8">
+        <form id="editInterviewForm" class="space-y-8">
+            <input type="hidden" id="interviewId" value="@Model.InterviewId" />
+            <input type="hidden" id="applicationId" value="@Model.ApplicationId" />
+            <div id="errorMsg" class="hidden p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert"></div>
+
+            <div class="space-y-4">
+                <h3 class="text-lg font-bold text-dark border-b border-gray-100 pb-2">1. Thông tin ứng viên (Không thể sửa)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <div>
+                        <span class="block text-xs font-medium text-muted uppercase tracking-wider mb-1">Ứng viên</span>
+                        <div class="font-bold text-dark">@Model.Candidate?.FullName</div>
+                        <div class="text-sm text-muted mt-0.5">@Model.Candidate?.CandidateNavigation?.Email</div>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-medium text-muted uppercase tracking-wider mb-1">Vị trí ứng tuyển</span>
+                        <div class="font-bold text-dark">@Model.Application?.Job?.Title</div>
+                        <div class="text-sm text-muted mt-0.5">Mã tin: @Model.Application?.JobId</div>
+                    </div>
+                    <div class="md:col-span-2 pt-2 border-t border-gray-200">
+                        <span class="block text-xs font-medium text-muted uppercase tracking-wider mb-1">Lịch cũ</span>
+                        <div class="text-sm font-medium text-dark">
+                            @Model.ScheduledTime.ToString("HH:mm") | @Model.ScheduledTime.ToString("dd/MM/yyyy") 
+                            (@(Model.InterviewType == "ONLINE" ? "Online" : "Offline"))
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4 pt-4">
+                <h3 class="text-lg font-bold text-dark border-b border-gray-100 pb-2">2. Cập nhật chi tiết cuộc hẹn</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-dark mb-2">Thời gian phỏng vấn mới <span class="text-red-500">*</span></label>
+                        <input type="text" id="interviewDate" required value="@Model.ScheduledTime.ToString("yyyy-MM-dd HH:mm")" placeholder="Chọn ngày và giờ..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:bg-white transition-colors text-sm font-medium text-dark bg-white cursor-pointer">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-dark mb-2">Hình thức phỏng vấn</label>
+                        <div class="flex flex-wrap gap-4 mt-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="InterviewType" value="ONLINE" @(Model.InterviewType == "ONLINE" ? "checked" : "") class="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary">
+                                <span class="text-sm font-medium text-dark">Trực tuyến (Online)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="InterviewType" value="OFFLINE" @(Model.InterviewType == "OFFLINE" ? "checked" : "") class="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary">
+                                <span class="text-sm font-medium text-dark">Trực tiếp (Offline)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label id="locationLabel" class="block text-sm font-bold text-dark mb-2">Link Meeting <span class="text-red-500">*</span></label>
+                        <input type="text" id="locationOrLink" required value="@(Model.InterviewType == "ONLINE" ? Model.MeetingLink : Model.Location)" placeholder="Ví dụ: https://meet.google.com/abc-xyz" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:bg-white transition-colors text-sm font-medium text-dark">
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4 pt-4">
+                <h3 class="text-lg font-bold text-dark border-b border-gray-100 pb-2">3. Thông tin bổ sung</h3>
+                <div>
+                    <label class="block text-sm font-bold text-dark mb-2">Lý do thay đổi lịch hẹn <span class="text-red-500">*</span></label>
+                    <textarea id="reasonForChange" rows="3" required placeholder="Nhập lý do thay đổi để ứng viên được biết..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:bg-white transition-colors text-sm text-dark resize-y mb-4"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-dark mb-2">Lời nhắn (Ghi chú)</label>
+                    <textarea id="notes" rows="3" placeholder="Ghi chú thêm cho ứng viên (nếu có)..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:bg-white transition-colors text-sm text-dark resize-y">@Model.Notes</textarea>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                <a href="/Recruiter/RecruiterInterview" class="px-6 py-2.5 bg-white border border-gray-200 text-dark font-bold rounded-lg hover:bg-gray-50 transition-colors text-sm">Hủy bỏ</a>
+                <button type="submit" id="submitBtn" class="px-6 py-2.5 bg-primary text-white font-bold rounded-lg hover:bg-blue-700 transition-colors text-sm shadow-sm flex items-center gap-2">
+                    Cập nhật & Gửi Email
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .flatpickr-wrapper {
+            width: 100%;
+            display: block;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+    <script>
+        // Toggle location label/placeholder
+        const radioButtons = document.querySelectorAll('input[name="InterviewType"]');
+        const locationLabel = document.getElementById('locationLabel');
+        const locationInput = document.getElementById('locationOrLink');
+
+        function updateLocationField() {
+            const selectedType = document.querySelector('input[name="InterviewType"]:checked').value;
+            if (selectedType === 'ONLINE') {
+                locationLabel.innerHTML = 'Link Meeting <span class="text-red-500">*</span>';
+                locationInput.placeholder = 'Ví dụ: https://meet.google.com/abc-xyz';
+            } else {
+                locationLabel.innerHTML = 'Địa điểm phỏng vấn <span class="text-red-500">*</span>';
+                locationInput.placeholder = 'Ví dụ: Tầng 4, Tòa nhà ABC, Số 123 Đường XYZ...';
+            }
+        }
+
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', updateLocationField);
+        });
+
+        // Initialize on load
+        updateLocationField();
+
+        // Initialize Flatpickr
+        flatpickr("#interviewDate", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            minDate: "today",
+            time_24hr: true,
+            locale: "vn",
+            static: true
+        });
+
+        document.getElementById('editInterviewForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Đang xử lý...';
+            errorMsg.classList.add('hidden');
+
+            const id = document.getElementById('interviewId').value;
+            const data = {
+                applicationId: parseInt(document.getElementById('applicationId').value),
+                interviewDate: document.getElementById('interviewDate').value.replace(' ', 'T'),
+                durationMinutes: 60,
+                interviewType: document.querySelector('input[name="InterviewType"]:checked').value,
+                locationOrLink: document.getElementById('locationOrLink').value,
+                notes: document.getElementById('notes').value,
+                reasonForChange: document.getElementById('reasonForChange').value
+            };
+
+            fetch('/Recruiter/RecruiterInterview/Edit/' + id, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/Recruiter/RecruiterInterview?message=success';
+                } else {
+                    errorMsg.textContent = data.message || "Có lỗi xảy ra";
+                    errorMsg.classList.remove('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Cập nhật & Gửi Email';
+                }
+            })
+            .catch(err => {
+                errorMsg.textContent = "Có lỗi xảy ra trong quá trình xử lý";
+                errorMsg.classList.remove('hidden');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Cập nhật & Gửi Email';
+            });
+        });
+    </script>
+}

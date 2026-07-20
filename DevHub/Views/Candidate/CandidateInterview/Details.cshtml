@@ -1,0 +1,407 @@
+@model DevHub.Models.Interview
+@{
+    ViewData["Title"] = "Chi tiết lịch phỏng vấn";
+    ViewData["IsCandidate"] = "true";
+    ViewData["ActiveMenu"] = "Interviews";
+
+    var statusLabel = Model.Status switch
+    {
+        "scheduled" => ("Chờ phỏng vấn", "bg-blue-50 text-blue-600 border-blue-100"),
+        "completed_pending" => ("Chờ kết quả", "bg-yellow-50 text-yellow-600 border-yellow-100"),
+        "passed" => ("Trúng tuyển", "bg-green-50 text-green-600 border-green-100"),
+        "rejected" => ("Không đạt", "bg-red-50 text-red-600 border-red-100"),
+        "cancelled" => ("Đã hủy", "bg-gray-50 text-gray-600 border-gray-200"),
+        _ => ("Không xác định", "bg-gray-50 text-gray-500 border-gray-200")
+    };
+
+    var accentColor = Model.Status switch
+    {
+        "passed" => "bg-green-500",
+        "rejected" => "bg-red-500",
+        "cancelled" => "bg-gray-400",
+        _ => "bg-primary"
+    };
+
+    var companyLogo = Model.Application?.Job?.Company?.CompanyLogoUrl ?? "https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg";
+    var jobTitle = Model.Application?.Job?.Title ?? "Vị trí ứng tuyển";
+    var companyName = Model.Application?.Job?.Company?.CompanyName ?? "Công ty";
+}
+
+<div class="bg-[#F8F9FA] min-h-screen py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <!-- Sidebar -->
+            <div class="lg:w-[280px] flex-shrink-0">
+                @await Html.PartialAsync("~/Views/Candidate/_Sidebar.cshtml")
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1 space-y-5">
+
+                <!-- Breadcrumb + Back -->
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <a href="/candidate/interviews" class="hover:text-primary transition-colors flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Lịch phỏng vấn
+                    </a>
+                    <span>/</span>
+                    <span class="text-dark font-medium">Chi tiết</span>
+                </div>
+
+                <!-- Header Card -->
+                <div class="bg-white rounded-[10px] shadow-sm border border-[#D6DDEB] overflow-hidden">
+                    <div class="h-1.5 w-full @accentColor"></div>
+                    <div class="p-6">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                <img src="@companyLogo" alt="@companyName" class="w-16 h-16 object-contain rounded-xl border border-[#D6DDEB] p-1 bg-white shadow-sm flex-shrink-0">
+                                <div>
+                                    <h1 class="text-xl font-bold text-dark">Phỏng vấn - @jobTitle</h1>
+                                    <p class="text-sm text-gray-500 mt-0.5">@companyName</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1.5 rounded-lg text-sm font-semibold border @statusLabel.Item2 self-start md:self-center">@statusLabel.Item1</span>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.Status == "scheduled" || Model.Status == "confirmed")
+                {
+                    <div class="bg-white rounded-[10px] shadow-sm border border-[#D6DDEB] p-6">
+                        <h2 class="text-[15px] font-bold text-dark mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Xác nhận phản hồi
+                        </h2>
+                        <div class="flex flex-wrap items-center gap-3">
+                            @if (Model.Status == "scheduled")
+                            {
+                                <button onclick="confirmAttendance(@Model.InterviewId)" class="px-5 py-2 rounded-lg bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition-colors shadow-sm flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Xác nhận tham gia
+                                </button>
+                                <button onclick="openCancelModal(@Model.InterviewId)" class="px-5 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200 text-sm font-semibold hover:bg-red-100 transition-colors shadow-sm flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Không thể tham gia
+                                </button>
+                            }
+                            else if (Model.Status == "confirmed")
+                            {
+                                <span class="px-5 py-2 rounded-lg bg-green-50 text-green-600 border border-green-200 text-sm font-semibold shadow-sm flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Đã xác nhận tham gia
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Details Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <!-- Thông tin thời gian & địa điểm -->
+                    <div class="bg-white rounded-[10px] shadow-sm border border-[#D6DDEB] p-6">
+                        <h2 class="text-[15px] font-bold text-dark mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Thời gian & Địa điểm
+                        </h2>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Ngày phỏng vấn</p>
+                                    <p class="text-sm font-semibold text-dark mt-0.5">@Model.ScheduledTime.ToString("dddd, dd/MM/yyyy")</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Giờ phỏng vấn</p>
+                                    <p class="text-sm font-semibold text-dark mt-0.5">@Model.ScheduledTime.ToString("HH:mm")</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-lg @(Model.InterviewType == "ONLINE" ? "bg-blue-50" : "bg-gray-50") flex items-center justify-center flex-shrink-0">
+                                    @if (Model.InterviewType == "ONLINE")
+                                    {
+                                        <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                        </svg>
+                                    }
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Hình thức</p>
+                                    <p class="text-sm font-semibold text-dark mt-0.5">@(Model.InterviewType == "ONLINE" ? "Phỏng vấn Online" : "Phỏng vấn Trực tiếp")</p>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.Location))
+                            {
+                                <div class="flex items-start gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-400 font-medium uppercase tracking-wide">Địa điểm</p>
+                                        <p class="text-sm font-semibold text-dark mt-0.5">@Model.Location</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Thông tin người phỏng vấn -->
+                    <div class="bg-white rounded-[10px] shadow-sm border border-[#D6DDEB] p-6">
+                        <h2 class="text-[15px] font-bold text-dark mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Người phỏng vấn
+                        </h2>
+                        @{
+                            var recruiter = ViewBag.Recruiter as DevHub.Models.Recruiter;
+                        }
+                        @if (recruiter?.RecruiterNavigation != null)
+                        {
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary font-bold text-sm">
+                                    @(recruiter.FullName?.FirstOrDefault() ?? 'R')
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-dark">@recruiter.FullName</p>
+                                    <p class="text-xs text-gray-400">@recruiter.RecruiterNavigation.Email</p>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-sm text-gray-400">Chưa có thông tin người phỏng vấn.</p>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.Notes))
+                        {
+                            <div class="mt-4">
+                                <h3 class="text-[13px] font-bold text-dark mb-2 uppercase tracking-wide text-gray-400">Ghi chú</h3>
+                                <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 text-sm text-gray-700">
+                                    @Model.Notes
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Meeting Link Card (nếu online) -->
+                @if (Model.InterviewType == "ONLINE" && !string.IsNullOrEmpty(Model.MeetingLink) && (Model.Status == "scheduled" || Model.Status == "confirmed"))
+                {
+                    <div class="bg-white rounded-[10px] shadow-sm border border-[#D6DDEB] p-6">
+                        <h2 class="text-[15px] font-bold text-dark mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Link tham gia phỏng vấn
+                        </h2>
+                        <div class="flex flex-col sm:flex-row items-center gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                            <div class="flex-1 text-sm text-blue-700 font-medium break-all">@Model.MeetingLink</div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Thông tin công việc -->
+                <div class="bg-white rounded-[10px] shadow-sm border border-[#D6DDEB] p-6">
+                    <h2 class="text-[15px] font-bold text-dark mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Thông tin công việc
+                    </h2>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm font-semibold text-dark">@jobTitle</p>
+                            <p class="text-xs text-gray-400 mt-0.5">@companyName</p>
+                        </div>
+                        @if (Model.Application?.JobId != null)
+                        {
+                            <a href="/Jobs/Details/@Model.Application.JobId"
+                               class="text-sm font-medium text-primary border border-primary/30 hover:bg-primary/5 px-4 py-1.5 rounded-lg transition-colors self-start sm:self-center">
+                                Xem tin tuyển dụng →
+                            </a>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Không thể tham gia -->
+<div id="cancelModal" class="fixed inset-0 z-[100] hidden bg-black/50 flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+    <div class="bg-white rounded-2xl w-full max-w-md mx-4 md:mx-auto overflow-hidden shadow-2xl transform scale-95 transition-transform duration-300">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <h3 class="text-lg font-bold text-gray-900">Không thể tham gia</h3>
+            <button type="button" onclick="closeCancelModal()" class="text-gray-400 hover:text-gray-500 hover:bg-gray-100 p-1.5 rounded-lg transition-colors">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <form id="cancelForm" class="p-6">
+            <input type="hidden" id="cancelInterviewId" name="id" />
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Vui lòng nhập lý do (Bắt buộc)</label>
+                <textarea id="cancelReason" name="reason" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" placeholder="Ví dụ: Tôi có việc bận đột xuất..." required></textarea>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="closeCancelModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    Đóng
+                </button>
+                <button type="submit" id="btnSubmitCancel" class="px-4 py-2 bg-red-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm flex items-center gap-2">
+                    Xác nhận
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        async function confirmAttendance(id) {
+            const result = await Swal.fire({
+                title: 'Xác nhận tham gia?',
+                text: 'Nhà tuyển dụng sẽ nhận được thông báo xác nhận của bạn.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10B981',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Đồng ý',
+                cancelButtonText: 'Đóng'
+            });
+
+            if (!result.isConfirmed) return;
+
+            Swal.fire({
+                title: 'Đang xử lý...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                const resp = await fetch('/candidate/interviews/confirm/' + id, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    await Swal.fire('Thành công', data.message, 'success');
+                    window.location.reload();
+                } else {
+                    Swal.fire('Lỗi', data.message || 'Có lỗi xảy ra', 'error');
+                }
+            } catch (e) {
+                Swal.fire('Lỗi', 'Không thể kết nối máy chủ', 'error');
+            }
+        }
+
+        const cancelModal = document.getElementById('cancelModal');
+        const modalContent = cancelModal.querySelector('.bg-white');
+
+        function openCancelModal(id) {
+            document.getElementById('cancelInterviewId').value = id;
+            document.getElementById('cancelReason').value = '';
+            cancelModal.classList.remove('hidden');
+            void cancelModal.offsetWidth;
+            cancelModal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+        }
+
+        function closeCancelModal() {
+            cancelModal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => { cancelModal.classList.add('hidden'); }, 300);
+        }
+
+        cancelModal.addEventListener('click', function (e) {
+            if (e.target === cancelModal) closeCancelModal();
+        });
+
+        document.getElementById('cancelForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const id = document.getElementById('cancelInterviewId').value;
+            const reason = document.getElementById('cancelReason').value.trim();
+
+            if (!reason) {
+                Swal.fire('Cảnh báo', 'Vui lòng nhập lý do', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitCancel');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+
+            Swal.fire({
+                title: 'Đang xử lý...',
+                text: 'Hệ thống đang gửi thông báo đến nhà tuyển dụng',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                const formData = new FormData();
+                formData.append('reason', reason);
+
+                const resp = await fetch('/candidate/interviews/cancel/' + id, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    closeCancelModal();
+                    await Swal.fire('Thành công', data.message, 'success');
+                    window.location.reload();
+                } else {
+                    Swal.fire('Lỗi', data.message || 'Có lỗi xảy ra', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Xác nhận';
+                }
+            } catch (e) {
+                Swal.fire('Lỗi', 'Không thể kết nối máy chủ', 'error');
+                btn.disabled = false;
+                btn.innerHTML = 'Xác nhận';
+            }
+        });
+    </script>
+}

@@ -1,0 +1,197 @@
+@using DevHub.ViewModels.Admin
+@model AdminTransactionListVm
+
+@{
+    ViewData["Title"] = "Lịch sử giao dịch toàn hệ thống";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="p-4 md:p-8">
+    <h2 class="text-3xl font-bold text-[#25324B] mb-6">Lịch sử giao dịch</h2>
+
+    <!-- Bộ lọc -->
+    <div class="bg-white rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.12)] mb-8 p-6">
+        <form method="get" action="/AdminTransaction" class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+            <div class="flex flex-col">
+                <label class="text-sm font-semibold text-[#515B6F] mb-1">Từ ngày</label>
+                <input type="date" name="from" class="border border-[#D6DDEB] rounded-lg px-4 py-2 text-[#25324B] focus:outline-none focus:border-[#4640DE]" value="@ViewBag.From" />
+            </div>
+            <div class="flex flex-col">
+                <label class="text-sm font-semibold text-[#515B6F] mb-1">Đến ngày</label>
+                <input type="date" name="to" class="border border-[#D6DDEB] rounded-lg px-4 py-2 text-[#25324B] focus:outline-none focus:border-[#4640DE]" value="@ViewBag.To" />
+            </div>
+            <div class="flex flex-col">
+                <label class="text-sm font-semibold text-[#515B6F] mb-1">Gói dịch vụ</label>
+                <select name="serviceId" class="border border-[#D6DDEB] rounded-lg px-4 py-2 text-[#25324B] focus:outline-none focus:border-[#4640DE] bg-white">
+                    <option value="">Tất cả</option>
+                    @foreach (var pkg in Model.AvailablePackages)
+                    {
+                        if (ViewBag.ServiceId != null && ViewBag.ServiceId.ToString() == pkg.ServiceId.ToString())
+                        {
+                            <option value="@pkg.ServiceId" selected>@pkg.PackageName</option>
+                        }
+                        else
+                        {
+                            <option value="@pkg.ServiceId">@pkg.PackageName</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="flex flex-col md:col-span-2">
+                <label class="text-sm font-semibold text-[#515B6F] mb-1">Tìm công ty</label>
+                <input type="text" name="keyword" class="border border-[#D6DDEB] rounded-lg px-4 py-2 text-[#25324B] focus:outline-none focus:border-[#4640DE]" placeholder="Nhập tên công ty..." value="@ViewBag.Keyword" />
+            </div>
+            <div class="flex flex-col md:col-span-1">
+                <label class="text-sm font-semibold text-[#515B6F] mb-1">Sắp xếp</label>
+                <select name="sortBy" class="border border-[#D6DDEB] rounded-lg px-4 py-2 text-[#25324B] focus:outline-none focus:border-[#4640DE] bg-white">
+                    <option value="date_desc" selected="@(ViewBag.SortBy == "date_desc" || ViewBag.SortBy == null)">Mới nhất</option>
+                    <option value="date_asc" selected="@(ViewBag.SortBy == "date_asc")">Cũ nhất</option>
+                    <option value="amount_desc" selected="@(ViewBag.SortBy == "amount_desc")">Giá trị giảm dần</option>
+                    <option value="amount_asc" selected="@(ViewBag.SortBy == "amount_asc")">Giá trị tăng dần</option>
+                </select>
+            </div>
+            <div class="md:col-span-6 flex justify-end mt-2">
+                <button type="submit" class="bg-[#4640DE] text-white rounded-full px-6 py-2 font-bold hover:bg-blue-700 transition flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    Lọc dữ liệu
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Danh sách giao dịch -->
+    <div class="bg-white rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-6">
+        @if (Model.Items.Any())
+        {
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-[#D6DDEB] text-[#515B6F]">
+                            <th class="py-4 px-4 font-semibold">Ngày giao dịch</th>
+                            <th class="py-4 px-4 font-semibold">Công ty</th>
+                            <th class="py-4 px-4 font-semibold">Gói dịch vụ</th>
+                            <th class="py-4 px-4 font-semibold">Loại</th>
+                            <th class="py-4 px-4 font-semibold text-right">Tổng tiền</th>
+                            <th class="py-4 px-4 font-semibold text-center">Trạng thái</th>
+                            <th class="py-4 px-4 font-semibold text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-[#25324B]">
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr class="border-b border-[#D6DDEB] hover:bg-gray-50 transition">
+                                <td class="py-4 px-4">@item.TransactionDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="py-4 px-4 font-bold text-[#4640DE]">@item.CompanyName</td>
+                                <td class="py-4 px-4">
+                                    <span class="inline-block px-3 py-1 bg-gray-100 text-[#515B6F] rounded-full text-sm font-medium">@item.PackageName</span>
+                                </td>
+                                <td class="py-4 px-4 text-sm">
+                                    @(item.TransactionType?.ToUpper() switch {
+                                        "RENEW" => "Gia hạn",
+                                        "UPGRADE" => "Nâng cấp gói",
+                                        "BUY_PACKAGE" => "Mua mới",
+                                        "PURCHASE" => "Mua mới",
+                                        _ => item.TransactionType
+                                    })
+                                </td>
+                                <td class="py-4 px-4 font-bold text-green-600 text-right">
+                                    @(item.TotalAmount > 0 ? item.TotalAmount.ToString("N0") : item.FinalAmount.ToString("N0")) VNĐ
+                                </td>
+                                <td class="py-4 px-4 text-center">
+                                    @if (item.Status == "COMPLETED" || item.Status == "SUCCESS")
+                                    {
+                                        <span class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Thành công</span>
+                                    }
+                                    else if (item.Status == "FAILED")
+                                    {
+                                        <span class="inline-block px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">Thất bại</span>
+                                    }
+                                    else if (item.Status == "CANCELLED")
+                                    {
+                                        <span class="inline-block px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">Đã hủy</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">Chờ TT</span>
+                                    }
+                                </td>
+                                <td class="py-4 px-4 text-center">
+                                    <a href="/AdminTransaction/Details/@item.TransactionId" class="inline-flex items-center gap-1 border border-[#4640DE] text-[#4640DE] px-3 py-1.5 rounded-full text-sm font-medium hover:bg-[#4640DE] hover:text-white transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Phân trang -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="mt-8 flex justify-center pb-6">
+                    @{
+                        var cur = Model.CurrentPage;
+                        var tp = Model.TotalPages;
+                        var start = cur - 1;
+                        var end = cur + 1;
+                        if (start < 1) { start = 1; end = Math.Min(tp, 3); }
+                        if (end > tp) { end = tp; start = Math.Max(1, tp - 2); }
+
+                        <div class="flex items-center gap-1">
+                            @if (cur > 1)
+                            {
+                                <a href="?page=@(cur - 1)&from=@ViewBag.From&to=@ViewBag.To&serviceId=@ViewBag.ServiceId&keyword=@ViewBag.Keyword&sortBy=@ViewBag.SortBy" class="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-700 hover:text-[#4640DE] hover:border-[#4640DE] transition-colors" title="Trang trước">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-300 cursor-not-allowed"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></span>
+                            }
+
+                            @if (start > 1)
+                            {
+                                <span class="w-8 h-8 flex items-center justify-center text-gray-500">…</span>
+                            }
+
+                            @for (int i = start; i <= end; i++)
+                            {
+                                var cls = i == cur
+                                    ? "w-8 h-8 flex items-center justify-center rounded bg-[#4640DE] text-white font-medium text-sm"
+                                    : "w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-700 hover:text-[#4640DE] hover:border-[#4640DE] transition-colors text-sm font-medium";
+                                <a href="?page=@i&from=@ViewBag.From&to=@ViewBag.To&serviceId=@ViewBag.ServiceId&keyword=@ViewBag.Keyword&sortBy=@ViewBag.SortBy" class="@cls">@i</a>
+                            }
+
+                            @if (end < tp)
+                            {
+                                <span class="w-8 h-8 flex items-center justify-center text-gray-500">…</span>
+                            }
+
+                            @if (cur < tp)
+                            {
+                                <a href="?page=@(cur + 1)&from=@ViewBag.From&to=@ViewBag.To&serviceId=@ViewBag.ServiceId&keyword=@ViewBag.Keyword&sortBy=@ViewBag.SortBy" class="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-700 hover:text-[#4640DE] hover:border-[#4640DE] transition-colors" title="Trang sau">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-300 cursor-not-allowed"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-12">
+                <div class="mb-4 text-[#D6DDEB] flex justify-center">
+                    <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <h5 class="text-[#515B6F] text-lg font-medium">Không tìm thấy giao dịch nào phù hợp với bộ lọc.</h5>
+            </div>
+        }
+    </div>
+</div>

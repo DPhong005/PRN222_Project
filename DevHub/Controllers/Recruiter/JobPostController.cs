@@ -1,0 +1,350 @@
+//AnhPT-04/06/2026
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using DevHub.Services.Interfaces;
+using DevHub.Repositories.Interfaces;
+using DevHub.ViewModels.Recruiter;
+using System.Threading.Tasks;
+using System.Security.Claims;
+
+namespace DevHub.Controllers.Recruiter
+{
+    [Route("Recruiter/[controller]")]
+    [Authorize(Roles = "RECRUITER")]
+    public class JobPostController : Controller
+    {
+        private readonly IAuthService _authService;
+        private readonly IRecruiterJobPostService _jobPostService;
+        private readonly ICommonJobPositionRepository _positionRepo;
+        private readonly ICommonTechnologyRepository _techRepo;
+        private readonly IProvinceRepository _provinceRepo;
+
+        public JobPostController(IAuthService authService, IRecruiterJobPostService jobPostService, ICommonJobPositionRepository positionRepo, ICommonTechnologyRepository techRepo, IProvinceRepository provinceRepo)
+        {
+            _authService = authService;
+            _jobPostService = jobPostService;
+            _positionRepo = positionRepo;
+            _techRepo = techRepo;
+            _provinceRepo = provinceRepo;
+        }
+
+        // Management page: check profile completeness, then render filtered/paginated posts.
+        [HttpGet]
+        public async Task<IActionResult> Index(string? q, string? status, int page = 1)
+        {
+            var email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "";
+            var dbUser = await _authService.FindUserByEmailAsync(email);
+            if (dbUser == null || dbUser.Recruiter == null)
+                return NotFound();
+
+            // Check: company profile must be > 96% complete and get verified to access the management page.
+            if (dbUser.Recruiter?.Company?.IsVerified != true || dbUser.Recruiter?.Company?.ProfileCompletion < 97)
+            {
+                ViewBag.ProfileIncomplete = true;
+                return View(new JobPostManageViewModel());
+            }
+
+            var vm = await _jobPostService.GetManagedJobPostsAsync(dbUser.Recruiter.RecruiterId, q, status, page, 10);
+            // Remaining posts in the active package, shown next to the create button.
+            ViewBag.PostsRemaining = (await _jobPostService.GetActivePackageInfoAsync(dbUser.Recruiter.RecruiterId)).PostsRemaining;
+            return View(vm);
+        }
+
+        // Read-only detail for any post owned by the recruiter. If the post is editable, show the Edit button.
+        [HttpGet("Detail/{id:int}")]
+        public async Task<IActionResult> Detail(int id, string? q, string? status, int page = 1)
+        {
+            var email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "";
+            var dbUser = await _authService.FindUserByEmailAsync(email);
+            if (dbUser == null || dbUser.Recruiter == null)
+                return NotFound();
+
+            var job = await _jobPostService.GetJobPostDetailAsync(dbUser.Recruiter.RecruiterId, id);
+            if (job == null)
+            {
+                TempData["Error"] = "Tin tuyển dụng không tồn tại.";
+                return RedirectToAction("Index", new { q, status, page });
+            }
+
+            ViewBag.Q = q; ViewBag.Status = status; ViewBag.Page = page;
+            return View(job);
+        }
+
+        // Render the create form after enforcing profile completeness and remaining quota.
+        [HttpGet("Create")]
+        public async Task<IActionResult> Create(string? q, string? status, int page = 1)
+        {
+            var email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "";
+            var dbUser = await _authService.FindUserByEmailAsync(email);
+            if (dbUser == null || dbUser.Recruiter == null)
+                return NotFound();
+
+            var info = await _jobPostService.GetActivePackageInfoAsync(dbUser.Recruiter.RecruiterId);
+            if (info.ProfileCompletion < 90)
+            {
+                TempData["Error"] = "Bạn cần hoàn thành đủ mục thông tin công ty";
+                return RedirectToAction("Index", "Settings");
+            }
+
+            if (!info.HasActivePackage || info.PostsRemaining <= 0)
+            {
+                TempData["Error"] = "Tài khoản không đủ lượt đăng. Vui lòng mua gói dịch vụ.";
+                return Redirect("/Recruiter/JobPost");
+            }
+
+            ViewBag.Positions = await _positionRepo.GetAllActiveAsync();
+            ViewBag.Techs = await _techRepo.GetAllActiveAsync();
+            ViewBag.Provinces = await _provinceRepo.GetAllAsync();
+            ViewBag.Q = q; ViewBag.Status = status; ViewBag.Page = page;
+            // Remaining posts in the active package, shown on the create form.
+            ViewBag.PostsRemaining = info.PostsRemaining;
+
+            return View();
+        }
+
+        // Validate and create a new post, service handles quota decrement + moderator notify.
+        [HttpPost("Create")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(DevHub.ViewModels.Recruiter.JobPostCreateViewModel vm, string? q, string? status, int page = 1)
+        {
+            var email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "";
+            var dbUser = await _authService.FindUserByEmailAsync(email);
+            if (dbUser == null || dbUser.Recruiter == null)
+                return NotFound();
+
+            //reload dropdown input and redirect query
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Positions = await _positionRepo.GetAllActiveAsync();
+                ViewBag.Techs = await _techRepo.GetAllActiveAsync();
+                ViewBag.Q = q; ViewBag.Status = status; ViewBag.Page = page;
+                ViewBag.PostsRemaining = (await _jobPostService.GetActivePackageInfoAsync(dbUser.Recruiter.RecruiterId)).PostsRemaining;
+                return View(vm);
+            }
+
+            try
+            {
+                var jobId = await _jobPostService.CreateJobPostAsync(dbUser.Recruiter.RecruiterId, vm);
+                TempData["Success"] = "Bài đăng đã được tạo và đang chờ kiểm duyệt.";
+                return RedirectToAction("Index", new { q, status, page });
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Could be profile completeness or quota or validation
+                TempData["Error"] = ex.Message;
+                if (ex.Message.Contains("hoàn thành"))
+                    return RedirectToAction("Index", "Settings");
+                if (ex.Message.Contains("gói dịch vụ"))
+                    return Redirect("/Recruiter/JobPost");
+
+                ViewBag.Positions = await _positionRepo.GetAllActiveAsync();
+                ViewBag.Techs = await _techRepo.GetAllActiveAsync();
+                ViewBag.Q = q; ViewBag.Status = status; ViewBag.Page = page;
+                ViewBag.PostsRemaining = (await _jobPostService.GetActivePackageInfoAsync(dbUser.Recruiter.RecruiterId)).PostsRemaining;
+                ModelState.AddModelError(string.Empty, ex.Message);
+                return View(vm);
+            }
+        }
+
+        // Repost a closed job post
+        [HttpGet("Repost/{id:int}")]
+        public async Task<IActionResult> Repost(int id, string? q, string? status, int page = 1)
+        {
+            var email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "";
+            var dbUser = await _authService.FindUserByEmailAsync(email);
+            if (dbUser == null || dbUser.Recruiter == null)
+                return NotFound();
+
+            var info = await _jobPostService.GetActivePackageInfoAsync(dbUser.Recruiter.RecruiterId);
+            if (info.ProfileCompletion < 90)
+            {
+                TempData["Error"] = "Bạn cần hoàn thành đủ mục thông tin công ty";
+                return RedirectToAction("Index", "Settings");
+            }
+
+            if (!info.HasActivePackage || info.PostsRemaining <= 0)
+            {
+                TempData["Error"] = "Tài khoản không đủ lượt đăng. Vui lòng mua gói dịch vụ.";
+                return Redirect("/Recruiter/JobPost");
+            }
+
+            var vm = await _jobPostService.GetJobPostForRepostAsync(dbUser.Recruiter.RecruiterId, id);
+            if (vm == null)
+            {
+                TempData["Error"] = "Không thể đăng lại bài viết này.";
+                return RedirectToAction("Index", new { q, status, page });
+            }
+
+            ViewBag.Positions = await _positionRepo.GetAllActiveAsync();
+            ViewBag.Techs = await _techRepo.GetAllActiveAsync();
+            ViewBag.Provinces = await _provinceRepo.GetAllAsync();
+            ViewBag.Q = q; ViewBag.Status = status; ViewBag.Page = page;
+            ViewBag.PostsRemaining = info.PostsRemaining;
+
+            return View("~/Views/Recruiter/JobPost/Create.cshtml", vm);
+        }
+
+        // Render the edit form. Allowed only if status is approved/rejected.
+        [HttpGet("Edit/{id:int}")]
+        public async Task<IActionResult> Edit(int id, string? q, string? status, int page = 1)
+        {
+            var email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "";
+            var dbUser = await _authService.FindUserByEmailAsync(email);
+            if (dbUser == null || dbUser.Recruiter == null)
+                return NotFound();
+
+            //Check job status that only APPROVED/REJECTED post can be edited.
+            var job = await _jobPostService.GetEditableJobPostAsync(dbUser.Recruiter.RecruiterId, id);
+            if (job == null)
+            {
+                TempData["Error"] = "Tin tuyển dụng không tồn tại hoặc không thể chỉnh sửa (chỉ tin Đã duyệt/Bị từ chối mới sửa được).";
+                return RedirectToAction("Index", new { q, status, page });
+            }
+
+            // Load positions and techs for dropdowns, also pass current tech-stack and status for displaying in the view.
+            ViewBag.Positions = await _positionRepo.GetAllActiveAsync();
+            ViewBag.Techs = await _techRepo.GetAllActiveAsync();
+            ViewBag.Provinces = await _provinceRepo.GetAllAsync();
+            ViewBag.JobId = job.JobId;
+            ViewBag.SelectedTechIds = job.Teches.Select(t => t.TechId).ToList();
+            ViewBag.SelectedProvinceIds = job.Provinces.Select(p => p.ProvinceId).ToList();
+            ViewBag.CurrentStatus = job.Status;
+            ViewBag.Q = q; ViewBag.Status = status; ViewBag.Page = page;
+
+            var vm = new JobPostCreateViewModel
+            {
+                Title = job.Title,
+                PositionId = job.PositionId,
+                TechnologyIds = job.Teches.Select(t => t.TechId).ToList(),
+                Description = job.Description ?? "",
+                Requirement = job.Requirement ?? "",
+                Benefit = job.Benefit ?? "",
+                ExperienceLevel = job.ExperienceLevel ?? "",
+                ProvinceIds = job.Provinces.Select(p => p.ProvinceId).ToList(),
+                WorkingModel = job.WorkingModel,
+                SalaryType = string.IsNullOrEmpty(job.SalaryType) ? "RANGE" : job.SalaryType,
+                SalaryMin = job.SalaryMin,
+                SalaryMax = job.SalaryMax,
+                HiringQuota = job.HiringQuota ?? 1,
+                Deadline = job.Deadline ?? DateOnly.FromDateTime(DateTime.Today),
+                Skill = job.Skill
+            };
+            return View(vm);
+        }
+
+        // Persist edits, service resubmits the post as PENDING for moderator re-review.
+        [HttpPost("Edit/{id:int}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, JobPostCreateViewModel vm, string? q, string? status, int page = 1)
+        {
+            //Get current user and check if they have a recruiter profile
+            var email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "";
+            var dbUser = await _authService.FindUserByEmailAsync(email);
+            if (dbUser == null || dbUser.Recruiter == null)
+                return NotFound();
+
+            // Validate the input model
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Positions = await _positionRepo.GetAllActiveAsync();
+                ViewBag.Techs = await _techRepo.GetAllActiveAsync();
+                ViewBag.JobId = id;
+                ViewBag.SelectedTechIds = vm.TechnologyIds ?? new List<int>();
+                ViewBag.SelectedProvinceIds = vm.ProvinceIds ?? new List<int>();
+                ViewBag.Q = q; ViewBag.Status = status; ViewBag.Page = page;
+                return View(vm);
+            }
+
+            try
+            {
+                //update successfully, redirect to index keeping the original filters.
+                await _jobPostService.UpdateJobPostAsync(dbUser.Recruiter.RecruiterId, id, vm);
+                TempData["Success"] = "Cập nhật tin tuyển dụng thành công. Tin đang chờ kiểm duyệt lại.";
+                return RedirectToAction("Index", new { q, status, page });
+            }
+            catch (KeyNotFoundException)
+            {
+                //Exception: Invalid Job post
+                TempData["Error"] = "Tin tuyển dụng không tồn tại.";
+                return RedirectToAction("Index", new { q, status, page });
+            }
+            catch (InvalidOperationException ex)
+            {
+                //Exception: business rule violation, ex: profile completeness or invalid status transition.
+                ModelState.AddModelError(string.Empty, ex.Message);
+                ViewBag.Q = q; ViewBag.Status = status; ViewBag.Page = page;
+                ViewBag.Positions = await _positionRepo.GetAllActiveAsync();
+                ViewBag.Techs = await _techRepo.GetAllActiveAsync();
+                ViewBag.JobId = id;
+                ViewBag.SelectedTechIds = vm.TechnologyIds ?? new List<int>();
+                ViewBag.SelectedProvinceIds = vm.ProvinceIds ?? new List<int>();
+                return View(vm);
+            }
+        }
+
+        // Permanently delete a Closed post after the confirm modal; service purges dependents.
+        [HttpPost("Delete/{id:int}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id, string? q, string? status, int page = 1)
+        {
+            //Get current user and check authorization.
+            var email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "";
+            var dbUser = await _authService.FindUserByEmailAsync(email);
+            if (dbUser == null || dbUser.Recruiter == null)
+                return NotFound();
+
+            try
+            {
+                //Delete and handle cascade deletes successfully, redirect to index.
+                await _jobPostService.DeleteJobPostAsync(dbUser.Recruiter.RecruiterId, id);
+                TempData["Success"] = "Đã xóa tin tuyển dụng.";
+            }
+            catch (KeyNotFoundException)
+            {
+                TempData["Error"] = "Tin tuyển dụng không tồn tại.";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+            catch (Exception)
+            {
+                //fail to delete due to unexpected error, may be due to related data could not be deleted (ex: FK constraint).
+                TempData["Error"] = "Không thể xóa tin do còn dữ liệu liên quan. Vui lòng thử lại hoặc liên hệ quản trị.";
+            }
+            // Keep the originating list filters after delete.
+            return RedirectToAction("Index", new { q, status, page });
+        }
+
+        // Recruiter closes an active (APPROVED) post -> status CLOSED.
+        [HttpPost("Close/{id:int}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Close(int id, string? q, string? status, int page = 1)
+        {
+            var email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "";
+            var dbUser = await _authService.FindUserByEmailAsync(email);
+            if (dbUser == null || dbUser.Recruiter == null)
+                return NotFound();
+
+            try
+            {
+                await _jobPostService.CloseJobPostAsync(dbUser.Recruiter.RecruiterId, id);
+                TempData["Success"] = "Đã đóng tin tuyển dụng.";
+            }
+            catch (KeyNotFoundException)
+            {
+                TempData["Error"] = "Tin tuyển dụng không tồn tại.";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+            // Keep the originating list filters after closing.
+            return RedirectToAction("Index", new { q, status, page });
+        }
+    }
+}
+
+
+
+

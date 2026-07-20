@@ -1,0 +1,546 @@
+@model DevHub.ViewModels.Jobs.JobDetailViewModel
+@{
+    ViewData["Title"] = Model.Title + " - DevHub";
+}
+
+<!-- Background Header -->
+<div class="w-full bg-[#F5F3FA] pt-8 pb-32">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center text-[13px] text-gray-500 mb-6">
+            <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <a href="/" class="hover:text-primary transition-colors">Trang chủ</a>
+            <span class="mx-2">&rsaquo;</span>
+            <a href="/Jobs" class="hover:text-primary transition-colors">Việc làm</a>
+            <span class="mx-2">&rsaquo;</span>
+            <span class="text-gray-900 font-medium">Chi tiết công việc</span>
+        </nav>
+    </div>
+</div>
+
+<!-- Main Content Area (Overlapping Header) -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 pb-16">
+    <div class="flex flex-col lg:flex-row gap-6 items-start">
+        
+        <!-- Left Column: Job Info & Description -->
+        <div class="w-full lg:w-2/3 flex flex-col gap-6">
+            
+            <!-- Top Job Card -->
+            <div class="bg-white rounded-[20px] shadow-[0_4px_20px_rgb(0,0,0,0.05)] p-6 md:p-8">
+                <h1 class="text-[26px] md:text-[30px] font-bold text-[#1E293B] mb-8">@Model.Title</h1>
+                
+                <div class="flex flex-col sm:flex-row gap-6 mb-8 flex-wrap">
+                    <!-- Salary -->
+                    <div class="flex items-center gap-4 min-w-[200px]">
+                        <div class="w-12 h-12 rounded-full bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-[13px] text-gray-500 mb-0.5">Mức lương</p>
+                            <p class="text-[15px] font-semibold text-[#4F46E5]">
+                                @{
+                                    var salaryType = (Model.SalaryType ?? "RANGE").ToUpperInvariant();
+                                }
+                                @if (salaryType == "NEGOTIABLE" || (!Model.SalaryMin.HasValue && !Model.SalaryMax.HasValue))
+                                {
+                                    <span>Thỏa thuận</span>
+                                }
+                                else if (salaryType == "FROM" && Model.SalaryMin.HasValue)
+                                {
+                                    <span>Từ @Model.SalaryMin.Value.ToString("N0") triệu</span>
+                                }
+                                else if (salaryType == "UPTO" && Model.SalaryMax.HasValue)
+                                {
+                                    <span>Đến @Model.SalaryMax.Value.ToString("N0") triệu</span>
+                                }
+                                else if (Model.SalaryMin.HasValue && Model.SalaryMax.HasValue)
+                                {
+                                    <span>@Model.SalaryMin.Value.ToString("N0") - @Model.SalaryMax.Value.ToString("N0") triệu</span>
+                                }
+                                else if (Model.SalaryMin.HasValue)
+                                {
+                                    <span>Từ @Model.SalaryMin.Value.ToString("N0") triệu</span>
+                                }
+                                else
+                                {
+                                    <span>Đến @Model.SalaryMax!.Value.ToString("N0") triệu</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="flex items-center gap-4 min-w-[200px]">
+                        <div class="w-12 h-12 rounded-full bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-[13px] text-gray-500 mb-0.5">Khu vực tuyển</p>
+                            <p class="text-[15px] font-medium text-[#1E293B]">@(Model.Provinces != null && Model.Provinces.Any() ? string.Join(", ", Model.Provinces) : "Toàn quốc")</p>
+                        </div>
+                    </div>
+
+                    <!-- Hiring Quota -->
+                    @if (Model.HiringQuota.HasValue)
+                    {
+                        <div class="flex items-center gap-4 min-w-[200px]">
+                            <div class="w-12 h-12 rounded-full bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center flex-shrink-0">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-[13px] text-gray-500 mb-0.5">Số lượng tuyển</p>
+                                <p class="text-[15px] font-medium text-[#1E293B]">@Model.HiringQuota.Value người</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="h-px w-full bg-gray-100 mb-6"></div>
+
+                <div class="text-[14px] text-gray-500 mb-8">
+                    Hạn nộp hồ sơ: <span class="font-bold text-[#1E293B]">@(Model.Deadline.HasValue ? Model.Deadline.Value.ToString("dd/MM/yyyy") : "Chưa có hạn")</span>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4">
+                    @{
+                        bool isExpired = Model.Deadline.HasValue && Model.Deadline.Value < DateOnly.FromDateTime(DateTime.Now);
+                        bool isApplied = ViewBag.AppStatus != null;
+                    }
+
+                    @if (isApplied)
+                    {
+                        <button type="button" disabled class="flex-1 bg-gray-100 text-gray-600 border border-gray-200 font-semibold py-3 px-6 rounded-lg cursor-not-allowed text-[15px] flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Đã ứng tuyển
+                        </button>
+                    }
+                    else if (isExpired)
+                    {
+                        <button type="button" disabled class="flex-1 bg-gray-300 text-white font-semibold py-3 px-6 rounded-lg cursor-not-allowed text-[15px]">
+                            Đã hết hạn ứng tuyển
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" onclick="handleApplyClick(@Model.JobId, '@Html.Raw(Model.Title)', '@Html.Raw(Model.CompanyName)')" class="flex-1 bg-[#4F46E5] text-white font-semibold py-3 px-6 rounded-lg hover:bg-opacity-90 transition-all text-[15px]">
+                            Ứng tuyển ngay
+                        </button>
+                    }
+                    <div data-is-authenticated="@(User.Identity?.IsAuthenticated == true ? "true" : "false")" class="flex-1 flex">
+                        <button type="button" class="bookmark-btn flex-1 border font-semibold py-3 px-6 rounded-lg transition-all text-[15px] flex items-center justify-center gap-2 @(Model.IsBookmarked ? "bg-indigo-50 text-[#4F46E5] border-[#4F46E5]" : "border-[#4F46E5] text-[#4F46E5] hover:bg-indigo-50")"
+                                data-job-id="@Model.JobId"
+                                data-bookmarked="@Model.IsBookmarked.ToString().ToLower()">
+                            <svg class="w-5 h-5" fill="@(Model.IsBookmarked ? "currentColor" : "none")" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                            </svg>
+                            <span class="bookmark-text">@(Model.IsBookmarked ? "Đã lưu công việc" : "Lưu công việc này")</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description Block -->
+            <div class="mt-6">
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <h2 class="text-[20px] font-bold text-[#1E293B] mb-4">Mô tả công việc</h2>
+                    <div class="text-[15px] text-[#475569] leading-relaxed mb-8 whitespace-pre-line">
+                        @Model.Description
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.Requirement))
+                {
+                    <h2 class="text-[20px] font-bold text-[#1E293B] mb-4">Yêu cầu ứng viên</h2>
+                    <div class="text-[15px] text-[#475569] leading-relaxed mb-8 whitespace-pre-line">
+                        @Model.Requirement
+                    </div>
+                }
+                
+                @if (!string.IsNullOrWhiteSpace(Model.Benefit))
+                {
+                    <h2 class="text-[20px] font-bold text-[#1E293B] mb-4">Quyền lợi</h2>
+                    <div class="text-[15px] text-[#475569] leading-relaxed whitespace-pre-line">
+                        @Model.Benefit
+                    </div>
+                }
+            </div>
+            
+        </div>
+
+        <!-- Right Column: Company Info & Similar Jobs -->
+        <div class="w-full lg:w-1/3 flex flex-col gap-6">
+            
+            <!-- Company Card -->
+            <div class="bg-white rounded-[20px] shadow-[0_4px_20px_rgb(0,0,0,0.05)] p-6">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-[60px] h-[60px] rounded-lg border border-gray-100 p-1 flex items-center justify-center flex-shrink-0">
+                        @if (!string.IsNullOrEmpty(Model.CompanyLogoUrl))
+                        {
+                            <img src="@Model.CompanyLogoUrl" alt="@Model.CompanyName" class="w-full h-full object-contain" />
+                        }
+                        else
+                        {
+                            <span class="text-[#f97316] font-bold text-[24px]">@(Model.CompanyName.Length > 0 ? Model.CompanyName[0].ToString().ToUpper() : "?")</span>
+                        }
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-[16px] text-[#1E293B]">@Model.CompanyName</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-4 mb-6">
+                    @if (!string.IsNullOrEmpty(Model.CompanyAddress))
+                    {
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <p class="text-[14px] text-gray-600 leading-relaxed">Địa chỉ: @Model.CompanyAddress</p>
+                        </div>
+                    }
+
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <p class="text-[14px] text-gray-600">Quy mô: 10 - 150 nhân viên</p>
+                    </div>
+
+                    @if (Model.AverageRating.HasValue)
+                    {
+                        <div class="flex items-center gap-2">
+                            <div class="flex text-yellow-400">
+                                <!-- Draw 5 stars -->
+                                @for (int i = 0; i < 5; i++)
+                                {
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                }
+                            </div>
+                            <span class="text-[13px] font-bold text-[#1E293B]">@Model.AverageRating.Value.ToString("0.0")</span>
+                            <span class="text-[13px] text-gray-500">(124 đánh giá)</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="text-center pt-4 border-t border-gray-100">
+                    <a href="#" class="text-[#4F46E5] text-[14px] font-semibold hover:underline">Xem trang công ty &rarr;</a>
+                </div>
+            </div>
+
+            @if (ViewBag.AppStatus != null)
+            {
+                <div class="bg-white rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-6">
+                    <h3 class="font-bold text-[16px] text-[#25324B] mb-4">Trạng thái ứng tuyển</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[14px] text-gray-600">Ngày nộp:</span>
+                            <span class="text-[14px] font-medium text-dark">
+                                @(ViewBag.AppliedAt != null ? ((DateTime)ViewBag.AppliedAt).ToString("dd/MM/yyyy") : "N/A")
+                            </span>
+                        </div>
+                        
+                        <div class="flex flex-col gap-2">
+                            <span class="text-[14px] text-gray-600">Trạng thái hiện tại:</span>
+                            
+                            @{
+                                string status = ViewBag.AppStatus.ToString();
+                                string badgeClass = status switch
+                                {
+                                    "PENDING" => "bg-yellow-50 text-yellow-600 border-yellow-100",
+                                    "APPROVED" => "bg-green-50 text-green-600 border-green-100",
+                                    "REJECTED" => "bg-red-50 text-red-600 border-red-100",
+                                    "HIRED" => "bg-indigo-50 text-[#4640DE] border-indigo-100",
+                                    "FINISHED" => "bg-blue-50 text-blue-600 border-blue-100",
+                                    "CANCELLED" => "bg-gray-50 text-gray-500 border-gray-200",
+                                    "FAILED" => "bg-orange-50 text-orange-600 border-orange-100",
+                                    _ => "bg-gray-50 text-gray-500 border-gray-200"
+                                };
+                                string statusText = status switch
+                                {
+                                    "PENDING" => "Đang chờ xử lý",
+                                    "APPROVED" => "Đã duyệt",
+                                    "REJECTED" => "Bị từ chối",
+                                    "HIRED" => "Đã tuyển dụng",
+                                    "FINISHED" => "Đã hoàn thành",
+                                    "CANCELLED" => "Đã hủy",
+                                    "FAILED" => "Không đạt",
+                                    _ => "Không xác định"
+                                };
+                            }
+                            
+                            <span class="inline-flex w-fit px-3 py-1.5 rounded-lg text-sm font-medium border @badgeClass">
+                                @statusText
+                            </span>
+                        </div>
+                        
+                        @if (ViewBag.Interviews != null && ((List<DevHub.Services.Interfaces.InterviewInfo>)ViewBag.Interviews).Count > 0)
+                        {
+                            <div class="pt-4 border-t border-[#D6DDEB]">
+                                <h4 class="font-bold text-[14px] text-[#25324B] mb-3">Lịch phỏng vấn</h4>
+                                <div class="space-y-3">
+                                    @foreach (var interview in (List<DevHub.Services.Interfaces.InterviewInfo>)ViewBag.Interviews)
+                                    {
+                                        <div class="bg-[#F7F5FC] rounded-xl p-3 border border-indigo-50 text-sm">
+                                            <div class="flex items-start gap-2 mb-2">
+                                                <svg class="w-4 h-4 text-[#4640DE] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <span class="font-medium text-[#25324B]">@interview.ScheduledTime.ToString("HH:mm - dd/MM/yyyy")</span>
+                                            </div>
+                                            
+                                            @{
+                                                string interviewType = string.IsNullOrEmpty(interview.InterviewType) ? "Chưa xác định" : interview.InterviewType;
+                                            }
+
+                                            <div class="flex items-start gap-2 text-[#515B6F] mb-1">
+                                                <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span>Hình thức: <span class="font-medium text-[#1E293B]">@interviewType</span></span>
+                                            </div>
+
+                                            @if (!string.IsNullOrEmpty(interview.Location))
+                                            {
+                                                <div class="flex items-start gap-2 text-[#515B6F] mb-1">
+                                                    <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                    <span>@interview.Location</span>
+                                                </div>
+                                            }
+                                            
+                                            @if (!string.IsNullOrEmpty(interview.MeetingLink))
+                                            {
+                                                <div class="flex items-start gap-2">
+                                                    <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-[#4640DE]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                                    </svg>
+                                                    <a href="@interview.MeetingLink" target="_blank" class="text-[#4640DE] hover:underline break-all">Link meeting</a>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+        </div>
+
+    </div>
+</section>
+
+<!-- Include Apply Modal -->
+@await Html.PartialAsync("~/Views/Candidate/_ApplyModal.cshtml")
+
+@section Scripts {
+    <!-- Toast container -->
+    <div id="bookmark-toast" class="fixed bottom-6 right-6 z-50 hidden">
+        <div class="bg-white border border-[#D6DDEB] shadow-xl rounded-2xl px-5 py-4 flex items-center gap-3 min-w-[280px]">
+            <div id="bookmark-toast-icon" class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+            </div>
+            <p id="bookmark-toast-msg" class="text-[14px] font-medium text-dark"></p>
+        </div>
+    </div>
+
+    <!-- SweetAlert2 for nice alerts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        const isAuthenticated = @(User.Identity?.IsAuthenticated == true ? "true" : "false");
+
+        function handleApplyClick(jobId, jobTitle, companyName) {
+            if (!isAuthenticated) {
+                Swal.fire({
+                    html: `
+                        <div class="flex flex-col items-center pt-4 pb-2">
+                            <div class="w-20 h-20 rounded-full bg-yellow-50 flex items-center justify-center mb-6">
+                                <svg class="w-10 h-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h2 class="text-[22px] font-bold text-gray-800 mb-2">Yêu cầu đăng nhập</h2>
+                            <p class="text-gray-500 text-[14px] text-center px-4 leading-relaxed">Bạn cần đăng nhập bằng tài khoản ứng viên để ứng tuyển công việc này.</p>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Đăng nhập ngay',
+                    cancelButtonText: 'Đóng',
+                    buttonsStyling: false,
+                    customClass: {
+                        popup: 'rounded-[24px] p-6 max-w-sm w-full shadow-2xl',
+                        actions: 'flex gap-3 w-full mt-4',
+                        confirmButton: 'flex-1 bg-[#4F46E5] hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-all',
+                        cancelButton: 'flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-xl transition-all'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/Auth/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                    }
+                });
+                return;
+            }
+
+            // Fetch candidate info
+            Swal.showLoading();
+            fetch('/Jobs/ApplyInfo')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        Swal.fire({
+                            html: `
+                                <div class="flex flex-col items-center pt-4 pb-2">
+                                    <div class="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-6">
+                                        <svg class="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                        </svg>
+                                    </div>
+                                    <h2 class="text-[22px] font-bold text-gray-800 mb-2">Truy cập từ chối</h2>
+                                    <p class="text-gray-500 text-[14px] text-center px-4 leading-relaxed">Chỉ ứng viên mới có thể ứng tuyển công việc này.</p>
+                                </div>
+                            `,
+                            showConfirmButton: true,
+                            confirmButtonText: 'Đã hiểu',
+                            buttonsStyling: false,
+                            customClass: {
+                                popup: 'rounded-[24px] p-6 max-w-sm w-full shadow-2xl',
+                                confirmButton: 'w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-xl transition-all mt-4'
+                            }
+                        });
+                        throw new Error('Unauthorized');
+                    }
+                    if (!res.ok) {
+                        Swal.fire({
+                            html: `
+                                <div class="flex flex-col items-center pt-4 pb-2">
+                                    <div class="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-6">
+                                        <svg class="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <h2 class="text-[22px] font-bold text-gray-800 mb-2">Đã có lỗi xảy ra</h2>
+                                    <p class="text-gray-500 text-[14px] text-center px-4 leading-relaxed">Không thể lấy thông tin ứng tuyển lúc này.</p>
+                                </div>
+                            `,
+                            showConfirmButton: true,
+                            confirmButtonText: 'Đóng',
+                            buttonsStyling: false,
+                            customClass: {
+                                popup: 'rounded-[24px] p-6 max-w-sm w-full shadow-2xl',
+                                confirmButton: 'w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-xl transition-all mt-4'
+                            }
+                        });
+                        throw new Error('Network error');
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    Swal.close();
+                    if (!data) return;
+
+                    // Mở modal và truyền dữ liệu
+                    openApplyModal(jobId, jobTitle, companyName, data);
+                })
+                .catch(err => {
+                    console.error(err);
+                });
+        }
+
+
+        // Tự động mở modal ứng tuyển nếu có apply=true trong URL
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get("apply")?.toLowerCase() === "true") {
+                handleApplyClick(@Model.JobId, `@Html.Raw(Model.Title)`, `@Html.Raw(Model.CompanyName)`);
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        });
+
+        // Bookmark Logic
+        function showToast(message, type) {
+            const toast = document.getElementById('bookmark-toast');
+            const msg = document.getElementById('bookmark-toast-msg');
+            const iconBox = document.getElementById('bookmark-toast-icon');
+            msg.textContent = message;
+            if (type === 'success') {
+                iconBox.className = 'w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-indigo-50 text-[#4F46E5]';
+            } else {
+                iconBox.className = 'w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-red-50 text-red-500';
+            }
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2500);
+        }
+
+        document.querySelectorAll('.bookmark-btn').forEach(btn => {
+            btn.addEventListener('click', async function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const wrapper = btn.closest('[data-is-authenticated]');
+                const isAuth = wrapper && wrapper.dataset.isAuthenticated === 'true';
+
+                if (!isAuth) {
+                    showToast('Vui lòng đăng nhập để lưu việc làm', 'error');
+                    setTimeout(() => { window.location.href = '/Auth/Login?returnUrl=' + encodeURIComponent(window.location.pathname); }, 2000);
+                    return;
+                }
+
+                const jobId = btn.dataset.jobId;
+                try {
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    const res = await fetch(`/candidate/bookmarks/toggle?jobId=${jobId}`, {
+                        method: 'POST',
+                        headers: { 'RequestVerificationToken': token }
+                    });
+                    if (!res.ok) throw new Error();
+                    const data = await res.json();
+
+                    const svg = btn.querySelector('svg');
+                    const textSpan = btn.querySelector('.bookmark-text');
+                    
+                    if (data.isBookmarked) {
+                        btn.dataset.bookmarked = 'true';
+                        btn.className = btn.className
+                            .replace('border-[#4F46E5] text-[#4F46E5] hover:bg-indigo-50', '')
+                            + ' bg-indigo-50 text-[#4F46E5] border-[#4F46E5]';
+                        svg.setAttribute('fill', 'currentColor');
+                        if (textSpan) textSpan.textContent = 'Đã lưu công việc';
+                        showToast('Đã lưu công việc thành công!', 'success');
+                    } else {
+                        btn.dataset.bookmarked = 'false';
+                        btn.className = btn.className
+                            .replace('bg-indigo-50 text-[#4F46E5] border-[#4F46E5]', '')
+                            + ' border-[#4F46E5] text-[#4F46E5] hover:bg-indigo-50';
+                        svg.setAttribute('fill', 'none');
+                        if (textSpan) textSpan.textContent = 'Lưu công việc này';
+                        showToast('Đã bỏ lưu công việc', 'success');
+                    }
+                } catch {
+                    showToast('Có lỗi xảy ra, vui lòng thử lại', 'error');
+                }
+            });
+        });
+    </script>
+}
