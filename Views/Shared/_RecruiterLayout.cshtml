@@ -13,7 +13,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -35,7 +38,10 @@
     </script>
     <style>
         body { font-family: 'Inter', sans-serif; }
-        
+
+        /* Hide the validation summary box when there are no errors (it still renders an empty <ul>). */
+        .validation-summary-valid { display: none; }
+
         .sidebar-secondary {
             transition: width 0.3s ease;
             width: 0px;
@@ -46,23 +52,13 @@
         }
         
         .sidebar-popover {
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            transform: translateX(-10px);
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            transition: opacity 0.15s ease;
         }
-        .sidebar-popover::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: -16px;
-            width: 16px;
-        }
-        .sidebar-item:hover .sidebar-popover.enabled {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(0);
+        .sidebar-popover.show {
+            display: block;
         }
     </style>
 </head>
@@ -84,63 +80,31 @@
             <nav class="hidden md:flex space-x-8">
                 <a href="/Home/Employer" class="text-muted font-medium hover:text-primary transition-colors text-[16px]">Giới thiệu</a>
                 <a href="/recruiter/dashboard" class="text-primary font-bold hover:text-primary transition-colors text-[16px]">Dashboard</a>
-                <a href="/Recruiter/RecruiterService" class="text-muted font-medium hover:text-primary transition-colors text-[16px]">Bảng giá</a>
+                <a href="/Recruiter/Payment/Subscription" class="text-muted font-medium hover:text-primary transition-colors text-[16px]">Bảng giá</a>
             </nav>
         </div>
         
         <!-- Right Section: Auth Buttons / User Profile -->
         <div class="hidden md:flex items-center space-x-6">
-
             <div class="relative group py-2">
                 <button class="text-muted hover:text-primary transition-colors relative block cursor-pointer">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                    <span class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white counter-number" data-target="3">3</span>
+                    <span id="notification-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white">0</span>
                 </button>
                 <div class="absolute top-full right-[-80px] sm:right-[-20px] md:right-0 pt-2 w-80 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
                     <div class="bg-white border border-[#D6DDEB] rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] overflow-hidden">
                         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="font-bold text-gray-900 text-[15px]">Thông báo</h3>
-                            <a href="/recruiter/notifications" class="text-xs font-medium text-primary hover:underline">Xem tất cả</a>
+                            <div class="flex gap-3">
+                                <a href="#" id="mark-all-read-btn" class="text-xs font-medium text-gray-500 hover:text-primary hover:underline">Đánh dấu đã đọc</a>
+                                <a href="/recruiter/notifications" class="text-xs font-medium text-primary hover:underline">Xem tất cả</a>
+                            </div>
                         </div>
-                        <div class="max-h-[320px] overflow-y-auto">
-                            <!-- Quan trọng -->
-                            <a href="/recruiter/notifications/details/1" class="block px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors bg-red-50/30">
-                                <div class="flex gap-3">
-                                    <div class="flex-1">
-                                        <div class="flex justify-between items-start mb-1">
-                                            <h4 class="text-sm font-semibold text-gray-900 line-clamp-1">Tài khoản sắp hết hạn</h4>
-                                            <span class="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0"></span>
-                                        </div>
-                                        <p class="text-xs text-gray-500 line-clamp-2">Gói dịch vụ "Gói Đồng" của bạn sẽ hết hạn trong 3 ngày tới...</p>
-                                        <p class="text-[10px] text-gray-400 mt-1.5"><i class="far fa-clock mr-1"></i>2 giờ trước</p>
-                                    </div>
-                                </div>
-                            </a>
-                            <!-- Cảnh báo -->
-                            <a href="/recruiter/notifications/details/2" class="block px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors bg-yellow-50/30">
-                                <div class="flex gap-3">
-                                    <div class="flex-1">
-                                        <div class="flex justify-between items-start mb-1">
-                                            <h4 class="text-sm font-semibold text-gray-900 line-clamp-1">Cần bổ sung Giấy phép kinh doanh</h4>
-                                            <span class="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0"></span>
-                                        </div>
-                                        <p class="text-xs text-gray-500 line-clamp-2">Hồ sơ công ty của bạn hiện đang thiếu bản scan Giấy phép...</p>
-                                        <p class="text-[10px] text-gray-400 mt-1.5"><i class="far fa-clock mr-1"></i>Hôm qua, 14:30</p>
-                                    </div>
-                                </div>
-                            </a>
-                            <!-- Thông tin -->
-                            <a href="/recruiter/notifications/details/3" class="block px-4 py-3 hover:bg-gray-50 transition-colors opacity-75">
-                                <div class="flex gap-3">
-                                    <div class="flex-1">
-                                        <div class="flex justify-between items-start mb-1">
-                                            <h4 class="text-sm font-medium text-gray-800 line-clamp-1">Ra mắt AI Matching</h4>
-                                        </div>
-                                        <p class="text-xs text-gray-500 line-clamp-2">Khám phá tính năng AI Matching hoàn toàn mới, giúp bạn...</p>
-                                        <p class="text-[10px] text-gray-400 mt-1.5"><i class="far fa-clock mr-1"></i>20/05/2026</p>
-                                    </div>
-                                </div>
-                            </a>
+                        <div id="notification-list" class="max-h-[320px] overflow-y-auto">
+                            <!-- Notifications will be loaded here dynamically -->
+                            <div class="px-4 py-8 text-center text-sm text-gray-500">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...
+                            </div>
                         </div>
                         <a href="/recruiter/notifications" class="block w-full py-2.5 text-center text-[13px] font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-primary transition-colors border-t border-gray-100">
                             Xem tất cả thông báo
@@ -164,8 +128,8 @@
             var dbUser = await AuthService.FindUserByEmailAsync(email);
             if (dbUser != null)
             {
-                displayName = dbUser.Recruiter?.CompanyName ?? dbUser.Recruiter?.FullName ?? dbUser.Email;
-                avatarUrl = dbUser.Recruiter?.CompanyLogoUrl ?? "";
+                displayName = dbUser.Recruiter?.FullName ?? dbUser.Recruiter?.Company?.CompanyName ?? dbUser.Email;
+                avatarUrl = dbUser.Recruiter?.Company?.CompanyLogoUrl ?? "";
             }
         }
     }
@@ -184,7 +148,7 @@
                     <div class="bg-white border border-[#D6DDEB] rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] py-2 overflow-hidden">
                         <a href="/recruiter/dashboard" class="block px-4 py-2.5 text-[15px] font-medium text-dark hover:bg-gray-50 transition-colors">Dashboard</a>
                         <a href="/Recruiter/JobPost" class="block px-4 py-2.5 text-[15px] font-medium text-dark hover:bg-gray-50 transition-colors">Quản lý tin tuyển dụng</a>
-                        <a href="/Recruiter/RecruiterProfile" class="block px-4 py-2.5 text-[15px] font-medium text-dark hover:bg-gray-50 transition-colors">Cài đặt tài khoản</a>
+                        <a href="/Recruiter/Settings?tab=account" class="block px-4 py-2.5 text-[15px] font-medium text-dark hover:bg-gray-50 transition-colors">Cài đặt tài khoản</a>
                         <div class="w-full h-[1px] bg-gray-100 my-1"></div>
                         <a href="/Auth/EmployerLogout" class="block px-4 py-2.5 text-[15px] font-medium text-red-600 hover:bg-red-50 transition-colors">Đăng xuất</a>
                     </div>
@@ -205,7 +169,7 @@
         </div>
 
         <!-- Menu Items -->
-        <div class="flex-1 w-full py-4 flex flex-col gap-2 items-center" id="sidebar-menu">
+        <div class="flex-1 w-full py-4 flex flex-col gap-2 items-center overflow-y-auto" id="sidebar-menu">
             
             <!-- Dashboard -->
             <div class="sidebar-item relative group w-full flex justify-center" data-menu="dashboard">
@@ -279,9 +243,27 @@
                 </div>
             </div>
 
+            <!-- Article -->
+            <div class="sidebar-item relative group w-full flex justify-center" data-menu="article">
+                <a href="/Recruiter/Article" class="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors @(ViewData["ActiveMenu"] as string == "Articles" ? "bg-blue-500 text-white hover:text-white hover:bg-blue-600" : "")">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
+                    <span class="text-[11px] font-medium text-center leading-tight">Bài báo</span>
+                </a>
+                
+                <div class="sidebar-popover enabled absolute left-[88px] top-0 ml-2 z-50 bg-white border border-gray-200 rounded-xl shadow-lg p-2 w-[260px]">
+                    <div class="flex items-center gap-3 text-blue-600 font-semibold mb-2 px-3 py-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
+                        Bài báo
+                    </div>
+                    <ul class="flex flex-col gap-1">
+                        <li><a href="/Recruiter/Article" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg> Quản lý bài báo</a></li>
+                    </ul>
+                </div>
+            </div>
+
             <!-- Dịch vụ -->
             <div class="sidebar-item relative group w-full flex justify-center" data-menu="services">
-                <a href="/Recruiter/RecruiterService" class="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors @(ViewData["ActiveMenu"] as string == "Services" ? "bg-blue-500 text-white hover:text-white hover:bg-blue-600" : "")">
+                <a href="/Recruiter/Payment/Subscription" class="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors @(ViewData["ActiveMenu"] as string == "Services" ? "bg-blue-500 text-white hover:text-white hover:bg-blue-600" : "")">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                     <span class="text-[11px] font-medium">Dịch vụ</span>
                 </a>
@@ -292,8 +274,8 @@
                         Dịch vụ
                     </div>
                     <ul class="flex flex-col gap-1">
-                        <li><a href="/Recruiter/RecruiterService" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Mua dịch vụ</a></li>
-                        <li><a href="/Recruiter/RecruiterService/History" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg> Lịch sử giao dịch</a></li>
+                        <li><a href="/Recruiter/Payment/Subscription" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Mua dịch vụ</a></li>
+                        <li><a href="/Recruiter/Payment/History" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg> Lịch sử giao dịch</a></li>
                     </ul>
                 </div>
             </div>
@@ -454,39 +436,58 @@
                 }
             });
 
+            // JS-based popover (position:fixed, bypass overflow-hidden)
+            sidebarItems.forEach(item => {
+                const popover = item.querySelector('.sidebar-popover');
+                if (!popover) return;
+                let hideTimer;
+
+                function showPopover() {
+                    if (isExpanded) {
+                        secondaryContent.innerHTML = popover.innerHTML;
+                        highlightActiveLinks();
+                        return;
+                    }
+                    clearTimeout(hideTimer);
+                    const rect = item.getBoundingClientRect();
+                    popover.style.top = rect.top + 'px';
+                    popover.style.left = (rect.right + 8) + 'px';
+                    popover.classList.add('show');
+                }
+
+                function hidePopover() {
+                    hideTimer = setTimeout(() => popover.classList.remove('show'), 80);
+                }
+
+                item.addEventListener('mouseenter', showPopover);
+                item.addEventListener('mouseleave', hidePopover);
+                popover.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+                popover.addEventListener('mouseleave', hidePopover);
+            });
+
+            // Ẩn popover khi scroll sidebar để tránh giật
+            const sidebarMenu = document.getElementById('sidebar-menu');
+            if (sidebarMenu) {
+                let scrollTimer;
+                sidebarMenu.addEventListener('scroll', () => {
+                    document.querySelectorAll('.sidebar-popover.show').forEach(p => p.classList.remove('show'));
+                }, { passive: true });
+            }
+
         });
     </script>
     @RenderSection("Scripts", required: false)
 
-    @{
-        var toastSuccess = TempData["SuccessMsg"]?.ToString();
-    }
-    @if (!string.IsNullOrEmpty(toastSuccess))
+    @if (isLoggedIn)
     {
-        <div id="toast-container" class="fixed top-6 right-6 z-[9999] flex flex-col gap-3" style="min-width:320px">
-            <div class="toast flex items-start gap-3 bg-white border border-green-200 rounded-xl shadow-lg px-5 py-4">
-                <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                </div>
-                <div class="flex-1">
-                    <p class="text-[14px] font-semibold text-green-800">Thành công</p>
-                    <p class="text-[13px] text-green-700 mt-0.5">@toastSuccess</p>
-                </div>
-                <button onclick="this.closest('.toast').remove()" class="text-gray-400 hover:text-gray-600 ml-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-        </div>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
         <script>
-            setTimeout(() => {
-                document.querySelectorAll('.toast').forEach(t => {
-                    t.style.transition = 'opacity 0.4s, transform 0.4s';
-                    t.style.opacity = '0';
-                    t.style.transform = 'translateY(-10px)';
-                    setTimeout(() => t.remove(), 400);
-                });
-            }, 4000);
+            window.DevHub = window.DevHub || {};
+            window.DevHub.isEmployer = true;
         </script>
+        <script src="~/js/notifications.js"></script>
     }
 </body>
 </html>

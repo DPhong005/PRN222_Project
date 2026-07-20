@@ -9,19 +9,34 @@ public class AuthService : IAuthService
     private readonly IUserAccountRepository _userRepo;
     private readonly ICandidateRepository   _candidateRepo;
     private readonly IRecruiterRepository   _recruiterRepo;
+    private readonly ICompanyRepository   _companyRepo;
+
+    // AuthService is registered Scoped (one instance per request). FindUserByEmailAsync
+    // is called both by the controller and by the shared layout (_RecruiterLayout) within
+    // the same request, so memoize per-request to avoid issuing the heavy 4-table join twice.
+    private readonly Dictionary<string, Task<UserAccount?>> _userByEmailCache = new();
 
     public AuthService(
         IUserAccountRepository userRepo,
         ICandidateRepository   candidateRepo,
-        IRecruiterRepository   recruiterRepo)
+        IRecruiterRepository   recruiterRepo,
+        ICompanyRepository companyRepo)
     {
         _userRepo      = userRepo;
         _candidateRepo = candidateRepo;
         _recruiterRepo = recruiterRepo;
+        _companyRepo = companyRepo;
     }
 
     public Task<UserAccount?> FindUserByEmailAsync(string email)
-        => _userRepo.GetByEmailAsync(email);
+    {
+        if (_userByEmailCache.TryGetValue(email, out var cached))
+            return cached;
+
+        var task = _userRepo.GetByEmailAsync(email);
+        _userByEmailCache[email] = task;
+        return task;
+    }
 
     public Task<UserAccount?> FindUserByGoogleIdAsync(string googleId)
         => _userRepo.GetByGoogleIdAsync(googleId);
@@ -59,7 +74,7 @@ public class AuthService : IAuthService
     }
 
     public async Task<UserAccount> CreateRecruiterGoogleAccountAsync(
-        string email, string googleId, string? fullName, string? avatarUrl, string? phone)
+        string email, string googleId, string? fullName, string? avatarUrl, string? phone, string? position)
     {
         var user = await _userRepo.AddAsync(new UserAccount
         {
@@ -76,9 +91,10 @@ public class AuthService : IAuthService
         {
             RecruiterId    = user.UserId,
             FullName       = fullName ?? email,
-            CompanyName    = fullName ?? email,
+            Position       = position,
+            CompanyId      = null,
             Phone          = phone,
-            CompanyLogoUrl = avatarUrl
+            IsCompanyAdmin = false
         });
 
         user.Recruiter = recruiter;
@@ -96,4 +112,7 @@ public class AuthService : IAuthService
 
     public Task SyncRecruiterAvatarAsync(int recruiterId, string avatarUrl)
         => _recruiterRepo.UpdateCompanyLogoAsync(recruiterId, avatarUrl);
+
+    public Task UpdatePasswordAsync(int userId, string passwordHash)
+        => _userRepo.UpdatePasswordAsync(userId, passwordHash);
 }

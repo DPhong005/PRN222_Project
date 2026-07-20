@@ -1,75 +1,63 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DevHub.Models;
-using System;
-using System.Collections.Generic;
+using DevHub.Services.Interfaces;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace DevHub.Controllers.Recruiter
 {
     [Route("recruiter/dashboard")]
-    [Authorize(Roles = "BUSINESS")]
+    [Authorize(Roles = "RECRUITER")]
     public class RecruiterDashboardController : Controller
     {
-        public RecruiterDashboardController()
+        private readonly IAuthService _authService;
+        private readonly IRecruiterDashboardService _dashboardService;
+        private readonly IInterviewService _interviewService;
+        private readonly ILogger<RecruiterDashboardController> _logger;
+
+        public RecruiterDashboardController(
+            IAuthService authService,
+            IRecruiterDashboardService dashboardService,
+            IInterviewService interviewService,
+            ILogger<RecruiterDashboardController> logger)
         {
+            _authService = authService;
+            _dashboardService = dashboardService;
+            _interviewService = interviewService;
+            _logger = logger;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index(
+            string? jobStatus, 
+            string? jobQ, 
+            string? jobSort, 
+            int jobPage = 1)
         {
-            // Sử dụng dữ liệu giả (mock data) để thiết kế UI mà không cần kết nối DB
-            var viewModel = new RecruiterDashboard
-            {
-                TotalJobPosts = 12,
-                TotalApplications = 145,
-                TotalScheduledInterviews = 8,
-                TotalCompletedInterviews = 32,
-                JobPostApplicantCounts = new List<JobPostApplicantCount>
-                {
-                    new JobPostApplicantCount { JobId = 1, Title = "Senior UI/UX Designer", ApplicantCount = 45, Status = "Active", CreatedAt = DateTime.Now.AddDays(-2) },
-                    new JobPostApplicantCount { JobId = 2, Title = "Frontend Developer (React/NextJS)", ApplicantCount = 38, Status = "Active", CreatedAt = DateTime.Now.AddDays(-5) },
-                    new JobPostApplicantCount { JobId = 3, Title = "Backend Engineer (.NET Core)", ApplicantCount = 24, Status = "Closed", CreatedAt = DateTime.Now.AddDays(-15) },
-                    new JobPostApplicantCount { JobId = 4, Title = "Marketing Specialist", ApplicantCount = 38, Status = "Active", CreatedAt = DateTime.Now.AddDays(-8) }
-                },
-                ScheduledInterviews = new List<Interview>
-                {
-                    new Interview { 
-                        InterviewId = 1, 
-                        ScheduledTime = DateTime.Now.AddDays(1).AddHours(2), 
-                        Status = "Scheduled", 
-                        Candidate = new DevHub.Models.Candidate { FullName = "Nguyễn Văn Hoàng" }, 
-                        Application = new Application { Job = new JobPost { Title = "Senior UI/UX Designer" } }, 
-                        MeetingLink = "https://meet.google.com/abc-xyz" 
-                    },
-                    new Interview { 
-                        InterviewId = 2, 
-                        ScheduledTime = DateTime.Now.AddDays(2).AddHours(5), 
-                        Status = "Scheduled", 
-                        Candidate = new DevHub.Models.Candidate { FullName = "Trần Thị Lan" }, 
-                        Application = new Application { Job = new JobPost { Title = "Frontend Developer" } }, 
-                        MeetingLink = "https://zoom.us/j/123456789" 
-                    }
-                },
-                CompletedInterviews = new List<Interview>
-                {
-                    new Interview { 
-                        InterviewId = 3, 
-                        ScheduledTime = DateTime.Now.AddDays(-1).AddHours(-2), 
-                        Status = "Completed", 
-                        Candidate = new DevHub.Models.Candidate { FullName = "Lê Tuấn Anh" }, 
-                        Application = new Application { Job = new JobPost { Title = "Backend Engineer" } } 
-                    },
-                    new Interview { 
-                        InterviewId = 4, 
-                        ScheduledTime = DateTime.Now.AddDays(-3).AddHours(-4), 
-                        Status = "Completed", 
-                        Candidate = new DevHub.Models.Candidate { FullName = "Phạm Mai Phương" }, 
-                        Application = new Application { Job = new JobPost { Title = "Marketing Specialist" } } 
-                    }
-                }
-            };
+            // Resolve the logged-in recruiter (auth concern stays in the controller).
+            var email = User.FindFirstValue(ClaimTypes.Email) ?? "";
+            var dbUser = await _authService.FindUserByEmailAsync(email);
+            if (dbUser?.Recruiter == null)
+                return NotFound();
 
-            return View("~/Views/Recruiter/RecruiterDashboard/Index.cshtml", viewModel);
+            int recruiterId = dbUser.Recruiter.RecruiterId;
+            int companyId = dbUser.Recruiter.CompanyId ?? 0;
+
+            await _interviewService.SyncInterviewStatusesAsync();
+
+            try
+            {
+                var viewModel = await _dashboardService.GetDashboardAsync(companyId, recruiterId, jobStatus, jobQ, jobSort, jobPage);
+                return View("~/Views/Recruiter/RecruiterDashboard/Index.cshtml", viewModel);
+            }
+            catch (Exception ex)
+            {
+                // Data retrieval failed — render the page with a safe empty model + an error banner
+                // instead of throwing an unhandled exception.
+                _logger.LogError(ex, "Failed to load recruiter dashboard for recruiter {RecruiterId}", recruiterId);
+                ViewBag.LoadError = "Không thể tải dữ liệu bảng điều khiển. Vui lòng thử lại sau.";
+                return View("~/Views/Recruiter/RecruiterDashboard/Index.cshtml", new RecruiterDashboard());
+            }
         }
     }
 }

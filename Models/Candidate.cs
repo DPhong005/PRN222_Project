@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace DevHub.Models;
@@ -23,6 +23,8 @@ public partial class Candidate
 
     public string? PreferredLocation { get; set; }
 
+    public string? PreferredWorkingModel { get; set; }
+
     public int? ExperienceYears { get; set; }
 
     public bool? CvSearchable { get; set; }
@@ -45,5 +47,5 @@ public partial class Candidate
 
     public virtual ICollection<Interview> Interviews { get; set; } = new List<Interview>();
 
-    public virtual ICollection<ReviewRecruiter> ReviewRecruiters { get; set; } = new List<ReviewRecruiter>();
+    public virtual ICollection<ReviewCompany> ReviewCompanies { get; set; } = new List<ReviewCompany>();
 }

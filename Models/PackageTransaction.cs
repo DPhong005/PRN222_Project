@@ -7,7 +7,7 @@ public partial class PackageTransaction
 {
     public int TransactionId { get; set; }
 
-    public int RecruiterId { get; set; }
+    public int CompanyId { get; set; }
 
     public int? ServiceId { get; set; }
 
@@ -16,6 +16,14 @@ public partial class PackageTransaction
     public decimal DiscountAmount { get; set; }
 
     public decimal FinalAmount { get; set; }
+
+    public decimal VatRate { get; set; }
+
+    public decimal VatAmount { get; set; }
+
+    public decimal TotalAmount { get; set; }
+
+    public string? BuyerTaxCode { get; set; }
 
     public string PaymentMethod { get; set; } = null!;
 
@@ -37,11 +45,15 @@ public partial class PackageTransaction
 
     public DateTime? CompletedAt { get; set; }
 
+    public int? RecruiterId { get; set; }
+
     public virtual Promotion? Promotion { get; set; }
 
-    public virtual Recruiter Recruiter { get; set; } = null!;
+    public virtual Recruiter? Recruiter { get; set; }
+
+    public virtual Company Company { get; set; } = null!;
 
     public virtual ServicePackage? Service { get; set; }
 
-    public virtual ICollection<RecruiterPackageHistory> RecruiterPackageHistories { get; set; } = new List<RecruiterPackageHistory>();
+    public virtual ICollection<CompanyPackageHistory> CompanyPackageHistories { get; set; } = new List<CompanyPackageHistory>();
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace DevHub.Models;
@@ -12,13 +12,18 @@ public partial class UserAccount
     public string Email { get; set; } = null!;
 
     public string? PasswordHash { get; set; }
-    public string? ResetPasswordToken { get; set; }
+    public string? OtpVerification { get; set; }
+
+    public DateTime? OtpExpiresAt { get; set; } 
+    public string? ResetPassworvmken { get; set; }
 
     public DateTime? ResetPasswordExpiresAt { get; set; }
 
     public string UserType { get; set; } = null!;
 
     public bool? IsActive { get; set; }
+
+    public bool EmailNotificationsEnabled { get; set; } = true;
 
     public DateTime? CreatedAt { get; set; }
 
