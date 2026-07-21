@@ -70,11 +70,87 @@ public partial class ItrecruitmentDbContext : DbContext
 
     public virtual DbSet<ModeratorIndustryAssignment> ModeratorIndustryAssignments { get; set; }
 
+    public virtual DbSet<ChatRoom> ChatRooms { get; set; }
+
+    public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer("Name=ConnectionStrings:DefaultConnection");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ChatRoom>(entity =>
+        {
+            entity.HasKey(e => e.RoomId);
+            entity.ToTable("chat_room");
+
+            // Unique Composite Index on (UserOneId, UserTwoId)
+            entity.HasIndex(e => new { e.UserOneId, e.UserTwoId }, "UQ_chat_room_users").IsUnique();
+
+            entity.Property(e => e.RoomId).HasColumnName("room_id");
+            entity.Property(e => e.UserOneId).HasColumnName("user_one_id");
+            entity.Property(e => e.UserTwoId).HasColumnName("user_two_id");
+            entity.Property(e => e.ApplicationId).HasColumnName("application_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.LastMessageAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("last_message_at");
+
+            // Avoid multiple cascade paths when deleting UserAccount
+            entity.HasOne(d => d.UserOne)
+                .WithMany(p => p.ChatRoomsAsUserOne)
+                .HasForeignKey(d => d.UserOneId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_chat_room_user_one");
+
+            entity.HasOne(d => d.UserTwo)
+                .WithMany(p => p.ChatRoomsAsUserTwo)
+                .HasForeignKey(d => d.UserTwoId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_chat_room_user_two");
+
+            // ApplicationId -> SetNull when deleting Application
+            entity.HasOne(d => d.Application)
+                .WithMany(p => p.ChatRooms)
+                .HasForeignKey(d => d.ApplicationId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_chat_room_application");
+        });
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.HasKey(e => e.MessageId);
+            entity.ToTable("chat_message");
+
+            entity.Property(e => e.MessageId).HasColumnName("message_id");
+            entity.Property(e => e.RoomId).HasColumnName("room_id");
+            entity.Property(e => e.SenderId).HasColumnName("sender_id");
+            entity.Property(e => e.MessageText).IsRequired().HasColumnName("message_text");
+            entity.Property(e => e.IsRead).HasDefaultValue(false).HasColumnName("is_read");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+
+            // Cascade delete from ChatRoom -> ChatMessage
+            entity.HasOne(d => d.ChatRoom)
+                .WithMany(p => p.ChatMessages)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_chat_message_room");
+
+            // SenderId -> Restrict to avoid multiple cascade paths
+            entity.HasOne(d => d.Sender)
+                .WithMany(p => p.SentChatMessages)
+                .HasForeignKey(d => d.SenderId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_chat_message_sender");
+        });
+
         modelBuilder.Entity<Admin>(entity =>
         {
             entity.HasKey(e => e.AdminId).HasName("PK__admin__43AA41418C23432B");

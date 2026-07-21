@@ -1,4 +1,7 @@
-namespace DevHub.Models
+using System;
+using System.Collections.Generic;
+
+namespace DevHub.ViewModels
 {
     public class DashboardViewModel
     {

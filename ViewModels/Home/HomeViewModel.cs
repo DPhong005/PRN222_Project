@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using DevHub.Models;
 
-namespace DevHub.Models
+namespace DevHub.ViewModels
 {
     public class HomeViewModel
     {

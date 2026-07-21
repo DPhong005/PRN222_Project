@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace DevHub.Models;
@@ -28,4 +28,6 @@ public partial class Application
     public virtual ICollection<Interview> Interviews { get; set; } = new List<Interview>();
 
     public virtual JobPost Job { get; set; } = null!;
+
+    public virtual ICollection<ChatRoom> ChatRooms { get; set; } = new List<ChatRoom>();
 }

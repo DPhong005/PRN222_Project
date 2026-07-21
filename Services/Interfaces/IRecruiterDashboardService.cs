@@ -1,4 +1,5 @@
 using DevHub.Models;
+using DevHub.ViewModels.Recruiter;
 
 namespace DevHub.Services.Interfaces;
 

@@ -36,4 +36,10 @@ public partial class UserAccount
     public virtual Candidate? Candidate { get; set; }
 
     public virtual Recruiter? Recruiter { get; set; }
+
+    public virtual ICollection<ChatRoom> ChatRoomsAsUserOne { get; set; } = new List<ChatRoom>();
+
+    public virtual ICollection<ChatRoom> ChatRoomsAsUserTwo { get; set; } = new List<ChatRoom>();
+
+    public virtual ICollection<ChatMessage> SentChatMessages { get; set; } = new List<ChatMessage>();
 }
