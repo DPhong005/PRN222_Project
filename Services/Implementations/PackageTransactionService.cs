@@ -1,4 +1,5 @@
 using DevHub.Models;
+using DevHub.ViewModels;
 using DevHub.Repositories.Interfaces;
 using DevHub.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;

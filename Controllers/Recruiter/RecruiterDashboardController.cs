@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DevHub.Models;
+using DevHub.ViewModels.Recruiter;
 using DevHub.Services.Interfaces;
 using System.Security.Claims;
 using System.Threading.Tasks;

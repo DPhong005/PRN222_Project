@@ -1,4 +1,5 @@
 using DevHub.Models;
+using DevHub.ViewModels;
 
 namespace DevHub.Services.Interfaces;
 

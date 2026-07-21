@@ -1,12 +1,8 @@
-// =========================================================================
-// Các thư viện, package phục vụ xử lý backend trang chủ (Homepage)
-// Author: PhongDH
-// Date: 31/06/2026
-// =========================================================================
 using System.Diagnostics;
 using System.Security.Claims;
 using DevHub.Data;
 using DevHub.Models;
+using DevHub.ViewModels;
 using DevHub.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,13 +22,8 @@ namespace DevHub.Controllers
             _bookmarkService = bookmarkService;
         }
 
-        /// <summary>
-        /// Hiển thị trang chủ với các dữ liệu nổi bật (việc làm, công ty, bài viết).
-        /// </summary>
         public async Task<IActionResult> Index()
         {
-            // Lấy danh sách 6 việc làm đã được duyệt (Approved)
-            // Sắp xếp ưu tiên theo điểm số (PriorityScore) giảm dần, sau đó theo ngày tạo mới nhất
             var featuredJobs = await _context.JobPosts
                 .Include(j => j.Company)
                 .Include(j => j.Position)
@@ -44,9 +35,6 @@ namespace DevHub.Controllers
                 .Take(6)
                 .ToListAsync();
 
-            // Lấy danh sách 8 công ty (nhà tuyển dụng) nổi bật đã được xác thực (IsVerified)
-            // Dữ liệu bao gồm thông tin cơ bản và tổng số lượng việc làm đã được duyệt của từng công ty
-            // Sắp xếp giảm dần theo số lượng việc làm
             var featuredCompanies = await _context.Companies
                 .Where(c => c.IsVerified == true)
                 .Select(c => new FeaturedCompanyViewModel

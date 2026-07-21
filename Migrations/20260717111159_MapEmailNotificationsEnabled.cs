@@ -10,10 +10,15 @@ namespace DevHub.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "EmailNotificationsEnabled",
-                table: "user_account",
-                newName: "email_notifications_enabled");
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT * FROM sys.columns 
+                    WHERE name = 'EmailNotificationsEnabled' AND object_id = OBJECT_ID('user_account')
+                )
+                BEGIN
+                    EXEC sp_rename 'user_account.EmailNotificationsEnabled', 'email_notifications_enabled', 'COLUMN';
+                END
+            ");
         }
 
         /// <inheritdoc />
