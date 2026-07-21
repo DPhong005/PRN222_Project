@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using DevHub.Models;
 
-namespace DevHub.Models
+namespace DevHub.ViewModels.Recruiter
 {
     public class RecruiterDashboard
     {

@@ -1,4 +1,4 @@
-namespace DevHub.Models
+namespace DevHub.ViewModels
 {
     public class ErrorViewModel
     {

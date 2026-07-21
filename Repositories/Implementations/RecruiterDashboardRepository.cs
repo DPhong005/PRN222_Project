@@ -2,6 +2,7 @@
 using DevHub.Repositories.Interfaces;
 using DevHub.Data;
 using DevHub.Models;
+using DevHub.ViewModels.Recruiter;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevHub.Repositories.Implementations;

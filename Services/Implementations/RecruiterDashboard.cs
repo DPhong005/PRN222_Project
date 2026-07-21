@@ -1,5 +1,6 @@
 //AnhPT-03/06/2026
 using DevHub.Models;
+using DevHub.ViewModels.Recruiter;
 using DevHub.Repositories.Interfaces;
 using DevHub.Services.Interfaces;
 

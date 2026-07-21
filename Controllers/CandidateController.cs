@@ -6,6 +6,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
 using System.Threading.Tasks;
+using DevHub.ViewModels;
 using DevHub.ViewModels.Candidate;
 using DevHub.Data;
 using Microsoft.EntityFrameworkCore;
@@ -68,7 +69,7 @@ namespace DevHub.Controllers
                 .Where(a => a.CandidateId == candidateId && a.AppliedAt >= startOfSixMonthsAgo && (a.Status == "APPROVED" || a.Status == "FINISHED" || a.Status == "HIRED" || a.Status == "FAILED" || a.Status == "REJECTED"))
                 .ToListAsync();
 
-            var graph6Months = new DevHub.Models.GraphDataDto();
+            var graph6Months = new DevHub.ViewModels.GraphDataDto();
             for (int i = 5; i >= 0; i--)
             {
                 var monthDate = DateTime.Now.AddMonths(-i);
@@ -95,7 +96,7 @@ namespace DevHub.Controllers
                 .Where(a => a.CandidateId == candidateId && a.AppliedAt >= startOfMonth && (a.Status == "APPROVED" || a.Status == "FINISHED" || a.Status == "HIRED" || a.Status == "FAILED" || a.Status == "REJECTED"))
                 .ToListAsync();
 
-            var graph1Month = new DevHub.Models.GraphDataDto();
+            var graph1Month = new DevHub.ViewModels.GraphDataDto();
             for (int i = 1; i <= daysInMonth; i++)
             {
                 graph1Month.Labels.Add($"{i}/{now.Month}");
@@ -110,7 +111,7 @@ namespace DevHub.Controllers
                 graph1Month.FailedData.Add(failedCount);
             }
 
-            var model = new DevHub.Models.DashboardViewModel
+            var model = new DevHub.ViewModels.DashboardViewModel
             {
                 AppliedJobsCount = appliedJobsCount,
                 SavedJobsCount = savedJobsCount,

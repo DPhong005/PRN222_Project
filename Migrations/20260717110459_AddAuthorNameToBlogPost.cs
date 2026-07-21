@@ -10,12 +10,15 @@ namespace DevHub.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "author_name",
-                table: "blog_post",
-                type: "nvarchar(255)",
-                maxLength: 255,
-                nullable: true);
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (
+                    SELECT * FROM sys.columns 
+                    WHERE name = 'author_name' AND object_id = OBJECT_ID('blog_post')
+                )
+                BEGIN
+                    ALTER TABLE [blog_post] ADD [author_name] nvarchar(255) NULL;
+                END
+            ");
         }
 
         /// <inheritdoc />
