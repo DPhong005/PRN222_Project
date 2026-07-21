@@ -48,15 +48,12 @@ namespace DevHub.Controllers
                 .Take(8)
                 .ToListAsync();
 
-            // Lấy danh sách 5 bài viết cẩm nang/blog đã được xuất bản (IsPublished)
-            // Sắp xếp giảm dần theo ngày xuất bản mới nhất
             var featuredBlogs = await _context.BlogPosts
                 .Where(b => b.Status == 1)
                 .OrderByDescending(b => b.PublishedAt)
                 .Take(5)
                 .ToListAsync();
 
-            // Khởi tạo ViewModel chứa các dữ liệu hiển thị cho trang chủ
             var viewModel = new HomeViewModel
             {
                 FeaturedJobs = featuredJobs,
@@ -64,7 +61,6 @@ namespace DevHub.Controllers
                 FeaturedBlogs = featuredBlogs
             };
 
-            // Load BookmarkedJobIds nếu ứng viên đã đăng nhập
             if (User.Identity?.IsAuthenticated == true && (User.IsInRole("CANDIDATE") || User.IsInRole("Candidate")))
             {
                 var candidateIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -85,13 +81,11 @@ namespace DevHub.Controllers
             return View();
         }
 
-        [Route("Home/Error404")]
         public IActionResult Error404()
         {
             return View();
         }
 
-        [Route("Home/Error403")]
         public IActionResult Error403()
         {
             return View();
@@ -109,93 +103,6 @@ namespace DevHub.Controllers
             ViewBag.Required = required;
             ViewBag.Actual = actual;
             return View();
-        }
-
-        // --- Temporary Route to preview UI without creating a new Controller ---
-        [Route("JobApproval")]
-        public IActionResult JobApprovalPreview()
-        {
-            return View("~/Views/Moderator/JobApproval/Index.cshtml");
-        }
-
-
-
-        [Route("ModeratorUser")]
-        public IActionResult ModeratorUserPreview()
-        {
-            return View("~/Views/Moderator/ModeratorUserManagement/Index.cshtml");
-        }
-
-        [Route("ModeratorPackage")]
-        public IActionResult ModeratorPackagePreview()
-        {
-            return View("~/Views/Moderator/PackageManagement/Index.cshtml");
-        }
-
-        [Route("ModeratorPackage/Create")]
-        public IActionResult ModeratorPackageCreatePreview()
-        {
-            return View("~/Views/Moderator/PackageManagement/Create.cshtml");
-        }
-
-        [Route("SystemLog")]
-        public IActionResult SystemLogPreview()
-        {
-            return View("~/Views/Moderator/SystemLog/Index.cshtml");
-        }
-
-        [Route("ModeratorVoucher")]
-        public IActionResult ModeratorVoucherPreview()
-        {
-            return View("~/Views/Moderator/Voucher/Index.cshtml");
-        }
-
-        [Route("ModeratorVoucher/Create")]
-        public IActionResult ModeratorVoucherCreatePreview()
-        {
-            return View("~/Views/Moderator/Voucher/Create.cshtml");
-        }
-
-
-
-        [Route("ReviewApproval")]
-        public IActionResult ReviewApprovalPreview()
-        {
-            return View("~/Views/Moderator/ReviewApproval/Index.cshtml");
-        }
-
-
-
-        [Route("AdminUser")]
-        public IActionResult AdminUserPreview()
-        {
-            return View("~/Views/Admin/AdminUserManagement/Index.cshtml");
-        }
-
-        [Route("AdminDashboard")]
-        public IActionResult AdminDashboardPreview()
-        {
-            return View("~/Views/Admin/AdminDashboard/Index.cshtml");
-        }
-
-
-
-        [Route("AdminSubscription")]
-        public IActionResult AdminSubscriptionPreview()
-        {
-            return View("~/Views/Admin/AdminSubscription/Index.cshtml");
-        }
-
-        [Route("AdminModerator")]
-        public IActionResult AdminModeratorPreview()
-        {
-            return View("~/Views/Admin/AdminModerator/Index.cshtml");
-        }
-
-        [Route("AdminModerator/Create")]
-        public IActionResult AdminModeratorCreatePreview()
-        {
-            return View("~/Views/Admin/AdminModerator/Create.cshtml");
         }
     }
 }

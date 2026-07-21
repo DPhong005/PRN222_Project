@@ -55,10 +55,10 @@
 
         <!-- Search Bar -->
         <form method="get" action="/Jobs" id="jobs-search-form">
-            <!-- Giữ các filter hiện tại khi search -->
             <input type="hidden" name="workingModel" value="@Model.Filter.WorkingModel" />
             <input type="hidden" name="experienceLevel" value="@Model.Filter.ExperienceLevel" />
-            <input type="hidden" name="desiredSalary" value="@Model.Filter.DesiredSalary" />
+            @if (Model.Filter.MinSalary.HasValue) { <input type="hidden" name="minSalary" value="@Model.Filter.MinSalary" /> }
+            @if (Model.Filter.MaxSalary.HasValue) { <input type="hidden" name="maxSalary" value="@Model.Filter.MaxSalary" /> }
             @if (Model.Filter.TechId.HasValue) { <input type="hidden" name="techId" value="@Model.Filter.TechId" /> }
             @if (!string.IsNullOrWhiteSpace(Model.Filter.FilterLocation)) { <input type="hidden" name="filterLocation" value="@Model.Filter.FilterLocation" /> }
             @if (Model.Filter.RecruiterId.HasValue) { <input type="hidden" name="recruiterId" value="@Model.Filter.RecruiterId" /> }
@@ -111,7 +111,7 @@
             <div id="tech-panel" class="hidden absolute left-0 top-full mt-2 bg-white border border-bordercolor rounded-2xl shadow-xl p-4 z-50 w-[520px] max-h-72 overflow-y-auto">
                 @if (techActive)
                 {
-                    <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, desiredSalary = Model.Filter.DesiredSalary })"
+                    <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, minSalary = Model.Filter.MinSalary, maxSalary = Model.Filter.MaxSalary })"
                        class="inline-flex items-center gap-1 text-primary text-[13px] hover:underline mb-3 font-medium">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                         Xóa lọc kỹ năng
@@ -120,7 +120,7 @@
                 <div class="flex flex-wrap gap-2">
                     @foreach (var tech in Model.TopTechs)
                     {
-                        <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, desiredSalary = Model.Filter.DesiredSalary, techId = tech.TechId, page = 1 })"
+                        <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, minSalary = Model.Filter.MinSalary, maxSalary = Model.Filter.MaxSalary, techId = tech.TechId, page = 1 })"
                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[13px] font-medium transition-all
                                   @(Model.Filter.TechId == tech.TechId ? "bg-primary text-white border-primary" : "border-gray-200 text-dark hover:border-primary hover:text-primary")">
                             @tech.TechName
@@ -147,7 +147,7 @@
             <div id="filter-city-panel" class="hidden absolute left-0 top-full mt-2 bg-white border border-bordercolor rounded-2xl shadow-xl p-4 z-50 w-72 max-h-72 overflow-y-auto">
                 @if (cityActive)
                 {
-                    <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, desiredSalary = Model.Filter.DesiredSalary, techId = Model.Filter.TechId })"
+                    <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, minSalary = Model.Filter.MinSalary, maxSalary = Model.Filter.MaxSalary, techId = Model.Filter.TechId })"
                        class="inline-flex items-center gap-1 text-primary text-[13px] hover:underline mb-3 font-medium">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                         Xóa lọc thành phố
@@ -156,7 +156,7 @@
                 <div class="space-y-1">
                     @foreach (var loc in Model.TopLocations)
                     {
-                        <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, desiredSalary = Model.Filter.DesiredSalary, techId = Model.Filter.TechId, filterLocation = loc.Location, page = 1 })"
+                        <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, minSalary = Model.Filter.MinSalary, maxSalary = Model.Filter.MaxSalary, techId = Model.Filter.TechId, filterLocation = loc.Location, page = 1 })"
                            class="flex justify-between items-center px-3 py-2 rounded-lg text-[14px] transition-colors
                                   @(Model.Filter.FilterLocation == loc.Location ? "bg-primary/10 text-primary font-semibold" : "text-dark hover:bg-gray-50 hover:text-primary")">
                             <span>@loc.Location</span>
@@ -183,7 +183,7 @@
             <div id="filter-company-panel" class="hidden absolute left-0 top-full mt-2 bg-white border border-bordercolor rounded-2xl shadow-xl p-4 z-50 w-80 max-h-72 overflow-y-auto">
                 @if (companyActive)
                 {
-                    <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, desiredSalary = Model.Filter.DesiredSalary, techId = Model.Filter.TechId, filterLocation = Model.Filter.FilterLocation })"
+                    <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, minSalary = Model.Filter.MinSalary, maxSalary = Model.Filter.MaxSalary, techId = Model.Filter.TechId, filterLocation = Model.Filter.FilterLocation })"
                        class="inline-flex items-center gap-1 text-primary text-[13px] hover:underline mb-3 font-medium">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                         Xóa lọc công ty
@@ -192,7 +192,7 @@
                 <div class="space-y-1">
                     @foreach (var company in Model.TopCompanies)
                     {
-                        <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, desiredSalary = Model.Filter.DesiredSalary, techId = Model.Filter.TechId, filterLocation = Model.Filter.FilterLocation, recruiterId = company.RecruiterId, page = 1 })"
+                        <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, minSalary = Model.Filter.MinSalary, maxSalary = Model.Filter.MaxSalary, techId = Model.Filter.TechId, filterLocation = Model.Filter.FilterLocation, recruiterId = company.RecruiterId, page = 1 })"
                            class="flex justify-between items-center px-3 py-2 rounded-lg text-[14px] transition-colors
                                   @(Model.Filter.RecruiterId == company.RecruiterId ? "bg-primary/10 text-primary font-semibold" : "text-dark hover:bg-gray-50 hover:text-primary")">
                             <div class="flex items-center gap-2 min-w-0">
@@ -253,7 +253,7 @@
                         }
                         @if (!string.IsNullOrWhiteSpace(Model.Filter.WorkingModel))
                         {
-                            <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, experienceLevel = Model.Filter.ExperienceLevel, desiredSalary = Model.Filter.DesiredSalary })"
+                            <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, experienceLevel = Model.Filter.ExperienceLevel, minSalary = Model.Filter.MinSalary, maxSalary = Model.Filter.MaxSalary })"
                                class="text-primary text-[13px] hover:underline block">Xóa lọc</a>
                         }
                     </div>
@@ -285,38 +285,68 @@
                         }
                         @if (!string.IsNullOrWhiteSpace(Model.Filter.ExperienceLevel))
                         {
-                            <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, desiredSalary = Model.Filter.DesiredSalary })"
+                            <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, minSalary = Model.Filter.MinSalary, maxSalary = Model.Filter.MaxSalary })"
                                class="text-primary text-[13px] hover:underline block">Xóa lọc</a>
                         }
                     </div>
                 </div>
             }
 
-            <!-- Filter: Mức lương mong muốn -->
+            <!-- Filter: Khoảng lương mong muốn (Dual Range Slider) -->
             <div class="mb-5">
                 <div class="flex justify-between items-center mb-3 cursor-pointer select-none filter-header">
-                    <h3 class="font-bold text-dark text-[15px]">Mức lương mong muốn</h3>
+                    <h3 class="font-bold text-dark text-[15px]">Khoảng lương mong muốn</h3>
                     <svg class="w-4 h-4 text-dark transition-transform duration-300 filter-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                     </svg>
                 </div>
-                <div class="space-y-2.5 filter-content">
+                <div class="space-y-3 filter-content">
+                    <input type="hidden" name="minSalary" id="hidden-min-salary" value="@Model.Filter.MinSalary" />
+                    <input type="hidden" name="maxSalary" id="hidden-max-salary" value="@Model.Filter.MaxSalary" />
+
+                    <!-- Ô nhập số trực tiếp song song -->
                     <div class="flex items-center gap-2">
-                        <input type="hidden" name="desiredSalary" id="hidden-desired-salary" value="@Model.Filter.DesiredSalary" />
-                        <input type="text" 
-                               id="display-desired-salary"
-                               value="@Model.Filter.DesiredSalary" 
-                               placeholder="VD: 15.000.000"
-                               class="money-input w-full border border-gray-300 rounded-lg px-3 py-2 text-[14px] text-dark focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" />
+                        <div class="flex-1">
+                            <label class="text-[11px] text-muted block mb-1 font-medium">Tối thiểu (VNĐ)</label>
+                            <input type="text" id="display-min-salary" placeholder="0"
+                                   class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-[13px] text-dark focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" />
+                        </div>
+                        <span class="text-muted font-bold self-end pb-1.5">-</span>
+                        <div class="flex-1">
+                            <label class="text-[11px] text-muted block mb-1 font-medium">Tối đa (VNĐ)</label>
+                            <input type="text" id="display-max-salary" placeholder="100.000.000"
+                                   class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-[13px] text-dark focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" />
+                        </div>
                     </div>
-                    <p class="text-[11px] text-muted mt-1">Nhập số VNĐ, ví dụ: 15000000</p>
-                    <button type="submit" class="w-full mt-2 bg-primary/10 text-primary font-bold py-2 rounded-lg hover:bg-primary/20 transition-all text-[13px]">
-                        Áp dụng mức lương
+
+                    <!-- Dual Range Slider Container -->
+                    <div class="relative w-full h-5 flex items-center my-1 select-none">
+                        <div class="w-full h-2 bg-gray-200 rounded-lg absolute pointer-events-none"></div>
+                        <div id="slider-track" class="h-2 bg-primary rounded-lg absolute pointer-events-none"></div>
+                        
+                        <input type="range" id="min-salary-slider" min="0" max="100000000" step="1000000"
+                               value="@(Model.Filter.MinSalary ?? 0)"
+                               class="range-slider-input w-full absolute appearance-none bg-transparent cursor-pointer z-20" />
+                        <input type="range" id="max-salary-slider" min="0" max="100000000" step="1000000"
+                               value="@(Model.Filter.MaxSalary ?? 100000000)"
+                               class="range-slider-input w-full absolute appearance-none bg-transparent cursor-pointer z-10" />
+                    </div>
+
+                    <!-- Quick Presets -->
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        <button type="button" onclick="setSalaryPreset(0, 15000000)" class="text-[11px] px-2 py-1 bg-gray-100 hover:bg-primary/10 hover:text-primary rounded text-muted font-medium transition-colors">&lt; 15 Tr</button>
+                        <button type="button" onclick="setSalaryPreset(15000000, 30000000)" class="text-[11px] px-2 py-1 bg-gray-100 hover:bg-primary/10 hover:text-primary rounded text-muted font-medium transition-colors">15 - 30 Tr</button>
+                        <button type="button" onclick="setSalaryPreset(30000000, 50000000)" class="text-[11px] px-2 py-1 bg-gray-100 hover:bg-primary/10 hover:text-primary rounded text-muted font-medium transition-colors">30 - 50 Tr</button>
+                        <button type="button" onclick="setSalaryPreset(50000000, 100000000)" class="text-[11px] px-2 py-1 bg-gray-100 hover:bg-primary/10 hover:text-primary rounded text-muted font-medium transition-colors">&gt; 50 Tr</button>
+                    </div>
+
+                    <button type="submit" class="w-full mt-2 bg-primary text-white font-bold py-2 rounded-lg hover:bg-opacity-90 transition-all text-[13px] shadow-sm">
+                        Áp dụng lọc lương
                     </button>
-                    @if (Model.Filter.DesiredSalary.HasValue)
+                    @if (Model.Filter.MinSalary.HasValue || Model.Filter.MaxSalary.HasValue)
                     {
-                        <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel })"
-                           class="text-primary text-[13px] hover:underline block mt-2">Xóa bộ lọc lương</a>
+                        <a href="@Url.Action("Index", "Jobs", new { keyword = Model.Filter.Keyword, workingModel = Model.Filter.WorkingModel, experienceLevel = Model.Filter.ExperienceLevel, techId = Model.Filter.TechId, filterLocation = Model.Filter.FilterLocation, recruiterId = Model.Filter.RecruiterId })"
+                           class="text-primary text-[13px] hover:underline block text-center mt-2 font-medium">Xóa bộ lọc lương</a>
                     }
                 </div>
             </div>
@@ -396,7 +426,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                                         </svg>
                                     </button>
-                                    <a href="/Jobs/Details/@job.JobId#apply" class="px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all text-[12px] font-semibold border border-primary/20 shadow-sm flex items-center gap-1 group/btn">
+                                    <a href="/Job/Apply/@job.JobId" class="px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all text-[12px] font-semibold border border-primary/20 shadow-sm flex items-center gap-1 group/btn">
                                         Ứng tuyển
                                         <svg class="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -573,30 +603,209 @@
                 });
         });
 
-        // Money format logic
-        function formatThousand(value) {
-            var digits = (value || '').replace(/\D/g, '');
+        // Dual Range Salary Slider Logic with Revert Validation
+        const minSlider = document.getElementById('min-salary-slider');
+        const maxSlider = document.getElementById('max-salary-slider');
+        const displayMin = document.getElementById('display-min-salary');
+        const displayMax = document.getElementById('display-max-salary');
+        const hiddenMin = document.getElementById('hidden-min-salary');
+        const hiddenMax = document.getElementById('hidden-max-salary');
+        const sliderTrack = document.getElementById('slider-track');
+        const maxLimit = 100000000;
+
+        let lastValidMinVal = parseInt(minSlider?.value) || 0;
+        let lastValidMaxVal = parseInt(maxSlider?.value) || maxLimit;
+
+        function formatThousand(val) {
+            if (val === null || val === undefined || val === '') return '';
+            var digits = String(val).replace(/\D/g, '');
             if (!digits) return '';
             return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         }
 
-        const displayInput = document.getElementById('display-desired-salary');
-        const hiddenInput = document.getElementById('hidden-desired-salary');
-        
-        if (displayInput && hiddenInput) {
-            // Initial formatting if there's a value
-            displayInput.value = formatThousand(displayInput.value);
+        function parseMoney(val) {
+            if (!val) return 0;
+            var digits = String(val).replace(/\D/g, '');
+            return digits ? parseInt(digits, 10) : 0;
+        }
 
-            displayInput.addEventListener('input', function() {
-                this.value = formatThousand(this.value);
-                hiddenInput.value = this.value.replace(/\./g, '');
-            });
-            
-            // Clean before submitting if any direct submit happens on this form
-            document.getElementById('filter-form').addEventListener('submit', function() {
-                hiddenInput.value = displayInput.value.replace(/\./g, '');
+        function updateSliderTrack(minVal, maxVal) {
+            const leftPercent = (minVal / maxLimit) * 100;
+            const rightPercent = 100 - (maxVal / maxLimit) * 100;
+            if (sliderTrack) {
+                sliderTrack.style.left = leftPercent + '%';
+                sliderTrack.style.right = rightPercent + '%';
+            }
+        }
+
+        function syncFromSliders(eventSource) {
+            if (!minSlider || !maxSlider) return;
+            let minVal = parseInt(minSlider.value) || 0;
+            let maxVal = parseInt(maxSlider.value) || maxLimit;
+
+            if (minVal > maxVal) {
+                if (eventSource === 'min') {
+                    minVal = maxVal;
+                    minSlider.value = minVal;
+                } else {
+                    maxVal = minVal;
+                    maxSlider.value = maxVal;
+                }
+            }
+
+            lastValidMinVal = minVal;
+            lastValidMaxVal = maxVal;
+
+            if (eventSource === 'min' || minVal > maxLimit / 2) {
+                minSlider.style.zIndex = '30';
+                maxSlider.style.zIndex = '20';
+            } else {
+                minSlider.style.zIndex = '20';
+                maxSlider.style.zIndex = '30';
+            }
+
+            if (displayMin) displayMin.value = minVal > 0 ? formatThousand(minVal) : '';
+            if (displayMax) displayMax.value = maxVal < maxLimit ? formatThousand(maxVal) : '';
+            if (hiddenMin) hiddenMin.value = minVal > 0 ? minVal : '';
+            if (hiddenMax) hiddenMax.value = maxVal < maxLimit ? maxVal : '';
+
+            updateSliderTrack(minVal, maxVal);
+        }
+
+        function validateAndSyncMinInput() {
+            let inputMinVal = parseMoney(displayMin.value);
+            let currentMaxVal = parseMoney(displayMax.value) || maxLimit;
+
+            if (inputMinVal > currentMaxVal) {
+                if (typeof showToast === 'function') {
+                    showToast('Lương tối thiểu không được lớn hơn lương tối đa!', 'error');
+                }
+                displayMin.value = lastValidMinVal > 0 ? formatThousand(lastValidMinVal) : '';
+                return false;
+            }
+
+            if (inputMinVal < 0) inputMinVal = 0;
+            if (inputMinVal > maxLimit) inputMinVal = maxLimit;
+
+            lastValidMinVal = inputMinVal;
+            minSlider.value = inputMinVal;
+            if (hiddenMin) hiddenMin.value = inputMinVal > 0 ? inputMinVal : '';
+
+            updateSliderTrack(inputMinVal, currentMaxVal);
+            return true;
+        }
+
+        function validateAndSyncMaxInput() {
+            let inputMaxVal = parseMoney(displayMax.value) || maxLimit;
+            let currentMinVal = parseMoney(displayMin.value) || 0;
+
+            if (inputMaxVal < currentMinVal && displayMax.value.trim() !== '') {
+                if (typeof showToast === 'function') {
+                    showToast('Lương tối đa không được nhỏ hơn lương tối thiểu!', 'error');
+                }
+                displayMax.value = lastValidMaxVal < maxLimit ? formatThousand(lastValidMaxVal) : '';
+                return false;
+            }
+
+            if (inputMaxVal <= 0 || inputMaxVal > maxLimit) inputMaxVal = maxLimit;
+
+            lastValidMaxVal = inputMaxVal;
+            maxSlider.value = inputMaxVal;
+            if (hiddenMax) hiddenMax.value = inputMaxVal < maxLimit ? inputMaxVal : '';
+
+            updateSliderTrack(currentMinVal, inputMaxVal);
+            return true;
+        }
+
+        if (minSlider && maxSlider) {
+            minSlider.addEventListener('input', () => syncFromSliders('min'));
+            maxSlider.addEventListener('input', () => syncFromSliders('max'));
+
+            minSlider.addEventListener('mousedown', () => { minSlider.style.zIndex = '40'; maxSlider.style.zIndex = '20'; });
+            maxSlider.addEventListener('mousedown', () => { maxSlider.style.zIndex = '40'; minSlider.style.zIndex = '20'; });
+            minSlider.addEventListener('touchstart', () => { minSlider.style.zIndex = '40'; maxSlider.style.zIndex = '20'; });
+            maxSlider.addEventListener('touchstart', () => { maxSlider.style.zIndex = '40'; minSlider.style.zIndex = '20'; });
+
+            if (displayMin) {
+                displayMin.addEventListener('input', function() {
+                    this.value = formatThousand(this.value);
+                });
+                displayMin.addEventListener('change', validateAndSyncMinInput);
+                displayMin.addEventListener('blur', validateAndSyncMinInput);
+            }
+            if (displayMax) {
+                displayMax.addEventListener('input', function() {
+                    this.value = formatThousand(this.value);
+                });
+                displayMax.addEventListener('change', validateAndSyncMaxInput);
+                displayMax.addEventListener('blur', validateAndSyncMaxInput);
+            }
+
+            // Initial sync
+            syncFromSliders('init');
+        }
+
+        const filterForm = document.getElementById('filter-form');
+        if (filterForm) {
+            filterForm.addEventListener('submit', function(e) {
+                const isMinValid = validateAndSyncMinInput();
+                const isMaxValid = validateAndSyncMaxInput();
+
+                if (!isMinValid || !isMaxValid) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
             });
         }
+
+        window.setSalaryPreset = function(minVal, maxVal) {
+            if (minSlider) minSlider.value = minVal;
+            if (maxSlider) maxSlider.value = maxVal;
+            syncFromSliders('min');
+        };
         });
     </script>
+
+    <style>
+        .range-slider-input {
+            pointer-events: none;
+            height: 0;
+            outline: none;
+        }
+        .range-slider-input::-webkit-slider-thumb {
+            pointer-events: auto;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4640DE;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: grab;
+            position: relative;
+            z-index: 30;
+        }
+        .range-slider-input::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.15);
+        }
+        .range-slider-input::-moz-range-thumb {
+            pointer-events: auto;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4640DE;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: grab;
+            position: relative;
+            z-index: 30;
+        }
+        .range-slider-input::-moz-range-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.15);
+        }
+    </style>
 }

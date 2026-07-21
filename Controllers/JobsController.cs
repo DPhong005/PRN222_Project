@@ -1,4 +1,3 @@
-// Author: [your-name] - Public job search controller
 using System.Security.Claims;
 using DevHub.Services.Interfaces;
 using DevHub.ViewModels.Jobs;
@@ -20,13 +19,10 @@ public class JobsController : Controller
         _applicationService = applicationService;
     }
 
-    /// GET /Jobs — Job search page. 
-    /// Receives filter from query string, returns paginated job list.
     public async Task<IActionResult> Index([FromQuery] JobSearchFilterViewModel filter)
     {
         var model = await _jobSearchService.SearchJobsAsync(filter);
 
-        // Load bookmark IDs nếu ứng viên đã đăng nhập
         if (User.Identity?.IsAuthenticated == true && User.IsInRole("CANDIDATE") || User.IsInRole("Candidate"))
         {
             var candidateIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -37,8 +33,7 @@ public class JobsController : Controller
         return View("~/Views/Candidate/Job/Index.cshtml", model);
     }
 
-    /// GET /Jobs/Details/{id} — Job details page.
-    /// Returns 404 if job does not exist or is not APPROVED.
+
     [HttpGet("Job/Detail/{id}")]
     [HttpGet("Jobs/Details/{id}")]
     public async Task<IActionResult> Details(int id)
@@ -69,8 +64,6 @@ public class JobsController : Controller
         return View("~/Views/Candidate/Job/Details.cshtml", model);
     }
 
-    /// GET /Job/Apply/{id}
-    /// Helper redirection for job applications from outside the details view.
     [HttpGet("Job/Apply/{id}")]
     public IActionResult ApplyJobRedirect(int id)
     {
@@ -84,8 +77,6 @@ public class JobsController : Controller
         }
     }
 
-    /// GET /Jobs/NavData — JSON data cho mega menu trong header.
-    /// Trả về top 20 kỹ năng, thành phố, công ty có nhiều job nhất.
     [HttpGet]
     public async Task<IActionResult> NavData()
     {
@@ -93,20 +84,6 @@ public class JobsController : Controller
         return Json(data);
     }
 
-    /// GET /Jobs/MakeExpired — Temporary test endpoint to make the first 2 jobs expired
-    [HttpGet("Jobs/MakeExpired")]
-    public async Task<IActionResult> MakeExpired([FromServices] DevHub.Data.ItrecruitmentDbContext context)
-    {
-        var jobs = context.JobPosts.Where(j => j.Status == "APPROVED").Take(2).ToList();
-        foreach (var job in jobs)
-        {
-            job.Deadline = DateOnly.FromDateTime(DateTime.Now.AddDays(-5));
-        }
-        await context.SaveChangesAsync();
-        return Content($"Đã cập nhật {jobs.Count} công việc (ID: {string.Join(", ", jobs.Select(j => j.JobId))}) thành quá hạn (cách đây 5 ngày).");
-    }
-
-    /// GET /Jobs/ApplyInfo — Get candidate info for apply modal
     [HttpGet]
     [Authorize(Roles = "CANDIDATE")]
     public async Task<IActionResult> ApplyInfo()
@@ -122,7 +99,6 @@ public class JobsController : Controller
         return Json(applyInfo);
     }
 
-    /// POST /Jobs/Apply — Submit job application
     [HttpPost]
     [Authorize(Roles = "CANDIDATE")]
     public async Task<IActionResult> Apply([FromBody] SubmitApplyViewModel model)

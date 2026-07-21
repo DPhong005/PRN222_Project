@@ -14,8 +14,6 @@ public class JobSearchRepository : IJobSearchRepository
         _context = context;
     }
 
-    /// Search for APPROVED jobs with filter + server-side pagination.
-    /// Order by created_at DESC (newest first).
     public async Task<(List<JobPost> Items, int TotalCount)> SearchAsync(JobSearchFilterViewModel filter)
     {
         var query = _context.JobPosts
@@ -26,7 +24,6 @@ public class JobSearchRepository : IJobSearchRepository
             .Include(j => j.Provinces)
             .Where(j => j.Status == "APPROVED");
 
-        // Filter: search by title or skill
         if (!string.IsNullOrWhiteSpace(filter.Keyword))
         {
             var kw = filter.Keyword.Trim();
@@ -35,41 +32,34 @@ public class JobSearchRepository : IJobSearchRepository
                 (j.Skill != null && j.Skill.Contains(kw)));
         }
 
-        // Filter: working model
         if (!string.IsNullOrWhiteSpace(filter.WorkingModel))
             query = query.Where(j => j.WorkingModel == filter.WorkingModel);
 
-        // Filter: experience level
         if (!string.IsNullOrWhiteSpace(filter.ExperienceLevel))
             query = query.Where(j => j.ExperienceLevel == filter.ExperienceLevel);
 
-        // Filter: desired salary
-        if (filter.DesiredSalary.HasValue && filter.DesiredSalary.Value > 0)
+        if (filter.MinSalary.HasValue && filter.MinSalary.Value > 0)
         {
-            var desiredVnd = filter.DesiredSalary.Value;
-            query = query.Where(j =>
-                (j.SalaryMin == null || j.SalaryMin <= desiredVnd) &&
-                (j.SalaryMax == null || j.SalaryMax >= desiredVnd) &&
-                (j.SalaryMin != null || j.SalaryMax != null)
-            );
+            var minVal = filter.MinSalary.Value;
+            query = query.Where(j => j.SalaryMax == null || j.SalaryMax >= minVal);
+        }
+        if (filter.MaxSalary.HasValue && filter.MaxSalary.Value > 0)
+        {
+            var maxVal = filter.MaxSalary.Value;
+            query = query.Where(j => j.SalaryMin == null || j.SalaryMin <= maxVal);
         }
 
-        // Quick-filter: kỹ năng
         if (filter.TechId.HasValue)
             query = query.Where(j => j.Teches.Any(t => t.TechId == filter.TechId.Value));
 
-        // Quick-filter: thành phố (giờ qua bảng province nối nhiều-nhiều)
         if (!string.IsNullOrWhiteSpace(filter.FilterLocation))
             query = query.Where(j => j.Provinces.Any(p => p.ProvinceName == filter.FilterLocation));
 
-        // Quick-filter: công ty
         if (filter.RecruiterId.HasValue)
             query = query.Where(j => j.CompanyId == filter.RecruiterId.Value);
 
-        // Count total before pagination
         var totalCount = await query.CountAsync();
 
-        // Pagination + order newest first
         var items = await query
             .OrderByDescending(j => j.CreatedAt)
             .Skip((filter.Page - 1) * filter.PageSize)
@@ -79,8 +69,6 @@ public class JobSearchRepository : IJobSearchRepository
         return (items, totalCount);
     }
 
-    /// Get details of 1 job by id, including Recruiter + Position + Teches.
-    /// Returns null if not found.
     public async Task<JobPost?> GetByIdAsync(int id)
     {
         return await _context.JobPosts
@@ -92,7 +80,6 @@ public class JobSearchRepository : IJobSearchRepository
             .FirstOrDefaultAsync(j => j.JobId == id);
     }
 
-    /// Get a list of DISTINCT working_model values in APPROVED jobs.
     public async Task<List<string>> GetDistinctWorkingModelsAsync()
     {
         return await _context.JobPosts
@@ -104,7 +91,6 @@ public class JobSearchRepository : IJobSearchRepository
             .ToListAsync();
     }
 
-    /// Get a list of DISTINCT experience_level values in APPROVED jobs.
     public async Task<List<string>> GetDistinctExperienceLevelsAsync()
     {
         return await _context.JobPosts
@@ -116,7 +102,6 @@ public class JobSearchRepository : IJobSearchRepository
             .ToListAsync();
     }
 
-    /// Top N techs có nhiều APPROVED job nhất (qua job_tech_stack).
     public async Task<List<(int TechId, string TechName, int JobCount)>> GetTopTechsAsync(int top)
     {
         return await _context.CommonTechnologies
@@ -134,8 +119,6 @@ public class JobSearchRepository : IJobSearchRepository
             .ToListAsync();
     }
 
-    /// Top N tỉnh/thành có nhiều APPROVED job nhất (qua bảng province nối nhiều-nhiều).
-    /// Nếu techId có, chỉ đếm job có kỹ năng đó (để cascading filter với bộ lọc kỹ năng đang chọn).
     public async Task<List<(string Location, int JobCount)>> GetTopLocationsAsync(int top, int? techId = null)
     {
         return await _context.Provinces
@@ -153,8 +136,6 @@ public class JobSearchRepository : IJobSearchRepository
             .ToListAsync();
     }
 
-    /// Top N companies có nhiều APPROVED job nhất.
-    /// Lọc theo techId và/hoặc filterLocation nếu có (để cascading filter).
     public async Task<List<(int CompanyId, string CompanyName, string? LogoUrl, int JobCount)>> GetTopCompaniesAsync(int top, int? techId = null, string? filterLocation = null)
     {
         var query = _context.JobPosts

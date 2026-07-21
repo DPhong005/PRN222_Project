@@ -4,8 +4,6 @@ using DevHub.ViewModels.Jobs;
 
 namespace DevHub.Services.Implementations;
 
-/// IJobSearchService implementation — handles job search business logic:
-/// calls Repository, maps Model → ViewModel, calculates pagination.
 public class JobSearchService : IJobSearchService
 {
     private readonly IJobSearchRepository _repo;
@@ -15,8 +13,6 @@ public class JobSearchService : IJobSearchService
         _repo = repo;
     }
 
-    /// Search for jobs by filter, load filter options from DB, 
-    /// map results to JobSearchPageViewModel.
     public async Task<JobSearchPageViewModel> SearchJobsAsync(JobSearchFilterViewModel filter)
     {
         var (items, totalCount) = await _repo.SearchAsync(filter);

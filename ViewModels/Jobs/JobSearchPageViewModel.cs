@@ -1,9 +1,5 @@
 namespace DevHub.ViewModels.Jobs;
 
-/// <summary>
-/// Aggregate model for the job search page (Index), including the job list, 
-/// current filters, pagination, and filter options loaded from the DB.
-/// </summary>
 public class JobSearchPageViewModel
 {
     public List<JobSearchItemViewModel> Jobs { get; set; } = new();
