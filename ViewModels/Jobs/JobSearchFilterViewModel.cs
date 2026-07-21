@@ -8,8 +8,8 @@ public class JobSearchFilterViewModel
     public string? Keyword { get; set; }
     public string? WorkingModel { get; set; }
     public string? ExperienceLevel { get; set; }
-    public decimal? DesiredSalary { get; set; }
-    // Quick-filter: lọc theo kỹ năng / thành phố / công ty
+    public decimal? MinSalary { get; set; }
+    public decimal? MaxSalary { get; set; }
     public int? TechId { get; set; }
     public string? FilterLocation { get; set; }
     public int? RecruiterId { get; set; }

@@ -2,6 +2,7 @@ using DevHub.Models;
 using DevHub.Data;
 using DevHub.Services.Interfaces;
 using DevHub.ViewModels.Jobs;
+using DevHub.ViewModels.Candidate;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevHub.Services.Implementations;
@@ -28,10 +29,9 @@ public class ApplicationService : IApplicationService
         if (candidate == null)
             return null;
 
-        // Try to find default CV, or fallback to the latest CV
         var cv = await _context.Cvs
             .Where(c => c.CandidateId == candidateId)
-            .OrderByDescending(c => c.IsDefault) // true (1) comes first, then false (0)
+            .OrderByDescending(c => c.IsDefault) 
             .ThenByDescending(c => c.CreatedAt)
             .FirstOrDefaultAsync();
 
@@ -53,23 +53,19 @@ public class ApplicationService : IApplicationService
         if (candidate == null)
             return (false, "Không tìm thấy thông tin ứng viên.");
 
-        // Nếu người dùng nhập thông tin mới từ modal, cập nhật lại profile
         if (!string.IsNullOrWhiteSpace(model.FullName))
             candidate.FullName = model.FullName;
         if (!string.IsNullOrWhiteSpace(model.Phone))
             candidate.Phone = model.Phone;
         if (!string.IsNullOrWhiteSpace(model.Address))
             candidate.Address = model.Address;
-
-        // Cập nhật Email (nằm ở UserAccount) nếu người dùng đổi email
         if (!string.IsNullOrWhiteSpace(model.Email))
         {
             var userAccount = await _context.UserAccounts.FindAsync(candidateId);
             if (userAccount != null)
             {
-                // Kiểm tra xem email mới có bị trùng với account khác không
-                bool isEmailExist = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.AnyAsync(
-                    _context.UserAccounts, u => u.Email == model.Email && u.UserId != candidateId);
+                bool isEmailExist = await _context.UserAccounts
+                    .AnyAsync(u => u.Email == model.Email && u.UserId != candidateId);
                 
                 if (!isEmailExist)
                 {
@@ -80,8 +76,6 @@ public class ApplicationService : IApplicationService
         
         await _context.SaveChangesAsync();
 
-
-        // Ưu tiên dùng CV được chỉ định từ modal; nếu không có thì lấy CV mặc định
         Models.Cv? cv;
         if (model.CvId.HasValue)
         {
@@ -126,12 +120,10 @@ public class ApplicationService : IApplicationService
 
         _context.Applications.Add(application);
 
-        // Update application count
         job.ApplicationCount = (job.ApplicationCount ?? 0) + 1;
 
         await _context.SaveChangesAsync();
 
-        // Gửi thông báo cho tất cả recruiter thuộc công ty đăng tin
         var recruiters = await _context.Recruiters
             .Include(r => r.RecruiterNavigation)
             .Where(r => r.CompanyId == job.CompanyId)
@@ -162,7 +154,6 @@ public class ApplicationService : IApplicationService
             }
             catch
             {
-                // Best-effort: không block nếu gửi thông báo thất bại
             }
 
             try
@@ -185,14 +176,13 @@ public class ApplicationService : IApplicationService
             }
             catch
             {
-                // Best-effort
             }
         }
 
         return (true, "Ứng tuyển thành công!");
     }
 
-    public async Task<DevHub.ViewModels.Candidate.AppliedJobPageViewModel> GetPagedAppliedAsync(
+    public async Task<AppliedJobPageViewModel> GetPagedAppliedAsync(
         int candidateId, int page, int pageSize,
         string? keyword, string? timeRange, string? status)
     {

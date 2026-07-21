@@ -19,7 +19,6 @@ public partial class JobPost
 
     public string WorkingModel { get; set; } = null!;
 
-    // How salary should be interpreted/displayed: RANGE | FROM | UPTO | NEGOTIABLE.
     public string SalaryType { get; set; } = "RANGE";
 
     public decimal? SalaryMin { get; set; }
